@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>绘境Online - 世界书编辑器</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <nav class="top-nav">
+        <div class="nav-brand">
+            <div class="logo">绘境</div>
+            <span class="nav-title">世界书编辑器</span>
+        </div>
+        <div class="nav-actions">
+            <button class="btn btn-secondary" id="previewBtn">预览</button>
+            <button class="btn btn-primary" id="publishBtn">发布</button>
+            <div class="user-avatar">
+                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" alt="用户">
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主布局 -->
+    <div class="main-layout">
+        <!-- 左侧导航 -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3>世界设置</h3>
+                <ul class="nav-list">
+                    <li class="nav-item active" data-panel="basic">
+                        <span class="icon">📋</span>
+                        <span>基础信息</span>
+                    </li>
+                    <li class="nav-item" data-panel="rules">
+                        <span class="icon">⚙️</span>
+                        <span>世界规则</span>
+                    </li>
+                    <li class="nav-item" data-panel="geography">
+                        <span class="icon">🗺️</span>
+                        <span>地理环境</span>
+                    </li>
+                    <li class="nav-item" data-panel="factions">
+                        <span class="icon">🏛️</span>
+                        <span>势力分布</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>内容创作</h3>
+                <ul class="nav-list">
+                    <li class="nav-item" data-panel="story">
+                        <span class="icon">📖</span>
+                        <span>剧情系统</span>
+                    </li>
+                    <li class="nav-item" data-panel="characters">
+                        <span class="icon">👥</span>
+                        <span>角色预设</span>
+                    </li>
+                    <li class="nav-item" data-panel="items">
+                        <span class="icon">⚔️</span>
+                        <span>物品系统</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>视觉生成</h3>
+                <ul class="nav-list">
+                    <li class="nav-item" data-panel="video-workflow">
+                        <span class="icon">🎬</span>
+                        <span>视频工作流</span>
+                    </li>
+                    <li class="nav-item" data-panel="visual-style">
+                        <span class="icon">🎨</span>
+                        <span>视觉风格</span>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 中间编辑区 -->
+        <main class="editor-main">
+            <!-- 基础信息面板 -->
+            <div class="panel active" id="panel-basic">
+                <div class="panel-header">
+                    <h2>基础信息</h2>
+                    <p class="panel-desc">定义世界的基本信息和核心设定</p>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label>世界名称</label>
+                        <input type="text" class="form-input" placeholder="给你的世界起个名字" value="赛博朋克都市">
+                    </div>
+                    <div class="form-group">
+                        <label>一句话描述</label>
+                        <input type="text" class="form-input" placeholder="用一句话描述你的世界" value="霓虹灯闪烁的雨夜，巨型公司统治着新上海">
+                        <button class="btn btn-ai" id="aiGenerateBasic">
+                            <span class="icon">✨</span>
+                            AI生成完整设定
+                        </button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>类型</label>
+                            <select class="form-select">
+                                <option value="fantasy">奇幻</option>
+                                <option value="scifi" selected>科幻</option>
+                                <option value="modern">现代</option>
+                                <option value="historical">历史</option>
+                                <option value="horror">恐怖</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>时代</label>
+                            <select class="form-select">
+                                <option value="past">过去</option>
+                                <option value="present">现代</option>
+                                <option value="future_2150" selected>未来2150</option>
+                                <option value="future_3000">未来3000</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>难度</label>
+                            <select class="form-select">
+                                <option value="easy">简单</option>
+                                <option value="normal" selected>普通</option>
+                                <option value="hard">困难</option>
+                                <option value="extreme">极限</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>标签</label>
+                        <div class="tag-input">
+                            <span class="tag">科幻</span>
+                            <span class="tag">赛博朋克</span>
+                            <span class="tag">未来</span>
+                            <input type="text" placeholder="添加标签...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视频工作流面板 -->
+            <div class="panel" id="panel-video-workflow">
+                <div class="panel-header">
+                    <h2>视频工作流</h2>
+                    <p class="panel-desc">配置AI视频生成管线，从图片到视频的完整流程</p>
+                </div>
+                <div class="panel-content">
+                    <!-- 工作流可视化 -->
+                    <div class="workflow-visual">
+                        <div class="workflow-step active" data-step="1">
+                            <div class="step-icon">📝</div>
+                            <div class="step-title">文本描述</div>
+                            <div class="step-desc">世界书/节点描述</div>
+                        </div>
+                        <div class="workflow-arrow">→</div>
+                        <div class="workflow-step" data-step="2">
+                            <div class="step-icon">🖼️</div>
+                            <div class="step-title">图片生成</div>
+                            <div class="step-desc">image2 关键帧</div>
+                        </div>
+                        <div class="workflow-arrow">→</div>
+                        <div class="workflow-step" data-step="3">
+                            <div class="step-icon">🎬</div>
+                            <div class="step-title">视频生成</div>
+                            <div class="step-desc">Seedance 2.0</div>
+                        </div>
+                        <div class="workflow-arrow">→</div>
+                        <div class="workflow-step" data-step="4">
+                            <div class="step-icon">🎮</div>
+                            <div class="step-title">选项注入</div>
+                            <div class="step-desc">互动节点</div>
+                        </div>
+                    </div>
+
+                    <!-- 工作流配置 -->
+                    <div class="workflow-config">
+                        <h3>工作流配置</h3>
+                        
+                        <!-- 步骤1：文本描述 -->
+                        <div class="config-section active" data-config="1">
+                            <div class="config-header">
+                                <span class="config-number">1</span>
+                                <h4>文本描述配置</h4>
+                            </div>
+                            <div class="config-content">
+                                <div class="form-group">
+                                    <label>场景描述模板</label>
+                                    <textarea class="form-textarea" rows="4" placeholder="描述场景..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>角色描述</label>
+                                    <textarea class="form-textarea" rows="3" placeholder="描述角色..."></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>动作描述</label>
+                                    <textarea class="form-textarea" rows="2" placeholder="描述动作..."></textarea>
+                                </div>
+                                <button class="btn btn-ai" id="aiOptimizePrompt">
+                                    <span class="icon">✨</span>
+                                    AI优化描述
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 步骤2：图片生成 -->
+                        <div class="config-section" data-config="2">
+                            <div class="config-header">
+                                <span class="config-number">2</span>
+                                <h4>图片生成配置</h4>
+                            </div>
+                            <div class="config-content">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>图片模型</label>
+                                        <select class="form-select">
+                                            <option value="image2" selected>image2 (推荐)</option>
+                                            <option value="midjourney">Midjourney</option>
+                                            <option value="flux">FLUX</option>
+                                            <option value="sdxl">Stable Diffusion XL</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>分辨率</label>
+                                        <select class="form-select">
+                                            <option value="1024x1024">1024x1024</option>
+                                            <option value="1920x1080" selected>1920x1080 (1080p)</option>
+                                            <option value="3840x2160">3840x2160 (4K)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>关键帧数量</label>
+                                    <div class="range-slider">
+                                        <input type="range" min="3" max="12" value="6" id="keyframeCount">
+                                        <span class="range-value">6</span>
+                                    </div>
+                                    <p class="form-hint">建议：紧张场景前后各3张</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>风格一致性</label>
+                                    <div class="range-slider">
+                                        <input type="range" min="1" max="100" value="90" id="styleConsistency">
+                                        <span class="range-value">90%</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>角色一致性</label>
+                                    <div class="range-slider">
+                                        <input type="range" min="1" max="100" value="85" id="characterConsistency">
+                                        <span class="range-value">85%</span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" id="generateImages">
+                                    <span class="icon">🖼️</span>
+                                    生成关键帧
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 步骤3：视频生成 -->
+                        <div class="config-section" data-config="3">
+                            <div class="config-header">
+                                <span class="config-number">3</span>
+                                <h4>视频生成配置</h4>
+                            </div>
+                            <div class="config-content">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>视频模型</label>
+                                        <select class="form-select">
+                                            <option value="seedance2" selected>Seedance 2.0 (推荐)</option>
+                                            <option value="runway">Runway Gen-3</option>
+                                            <option value="pika">Pika 1.5</option>
+                                            <option value="luma">Luma Dream Machine</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>帧率</label>
+                                        <select class="form-select">
+                                            <option value="24">24fps (电影感)</option>
+                                            <option value="30" selected>30fps (标准)</option>
+                                            <option value="60">60fps (流畅)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>视频时长</label>
+                                        <div class="range-slider">
+                                            <input type="range" min="3" max="10" value="5" id="videoDuration">
+                                            <span class="range-value">5秒</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>运动强度</label>
+                                        <div class="range-slider">
+                                            <input type="range" min="1" max="100" value="50" id="motionStrength">
+                                            <span class="range-value">50%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>视频风格</label>
+                                    <div class="style-presets">
+                                        <div class="style-preset active" data-style="cinematic">
+                                            <div class="preset-preview"></div>
+                                            <span>电影感</span>
+                                        </div>
+                                        <div class="style-preset" data-style="anime">
+                                            <div class="preset-preview"></div>
+                                            <span>动漫</span>
+                                        </div>
+                                        <div class="style-preset" data-style="realistic">
+                                            <div class="preset-preview"></div>
+                                            <span>写实</span>
+                                        </div>
+                                        <div class="style-preset" data-style="painterly">
+                                            <div class="preset-preview"></div>
+                                            <span>油画</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>相机运动</label>
+                                    <div class="camera-motions">
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" checked> 推近
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox"> 拉远
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox" checked> 平移
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox"> 旋转
+                                        </label>
+                                        <label class="checkbox-label">
+                                            <input type="checkbox"> 手持晃动
+                                        </label>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" id="generateVideo">
+                                    <span class="icon">🎬</span>
+                                    生成视频
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 步骤4：选项注入 -->
+                        <div class="config-section" data-config="4">
+                            <div class="config-header">
+                                <span class="config-number">4</span>
+                                <h4>选项注入配置</h4>
+                            </div>
+                            <div class="config-content">
+                                <div class="form-group">
+                                    <label>选项显示时机</label>
+                                    <div class="timing-options">
+                                        <label class="radio-label">
+                                            <input type="radio" name="timing" value="end" checked> 视频结束时
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="timing" value="custom"> 自定义时间点
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>选项样式</label>
+                                    <div class="option-styles">
+                                        <div class="option-style-preview active" data-style="bottom">
+                                            <div class="preview-box">
+                                                <div class="video-area"></div>
+                                                <div class="options-area">
+                                                    <div class="option-btn">选项A</div>
+                                                    <div class="option-btn">选项B</div>
+                                                </div>
+                                            </div>
+                                            <span>底部选项</span>
+                                        </div>
+                                        <div class="option-style-preview" data-style="overlay">
+                                            <div class="preview-box">
+                                                <div class="video-area"></div>
+                                                <div class="options-overlay">
+                                                    <div class="option-btn">选项A</div>
+                                                    <div class="option-btn">选项B</div>
+                                                </div>
+                                            </div>
+                                            <span>叠加选项</span>
+                                        </div>
+                                        <div class="option-style-preview" data-style="sidebar">
+                                            <div class="preview-box">
+                                                <div class="video-area"></div>
+                                                <div class="options-sidebar">
+                                                    <div class="option-btn">A</div>
+                                                    <div class="option-btn">B</div>
+                                                </div>
+                                            </div>
+                                            <span>侧边选项</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>选项动画</label>
+                                    <select class="form-select">
+                                        <option value="fade">淡入淡出</option>
+                                        <option value="slide" selected>滑入</option>
+                                        <option value="bounce">弹跳</option>
+                                        <option value="typewriter">打字机</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>时间限制</label>
+                                    <div class="range-slider">
+                                        <input type="range" min="0" max="30" value="10" id="timeLimit">
+                                        <span class="range-value">10秒</span>
+                                    </div>
+                                    <p class="form-hint">0 = 无限制</p>
+                                </div>
+                                <button class="btn btn-primary" id="previewWithOptions">
+                                    <span class="icon">👁️</span>
+                                    预览带选项的视频
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 生成队列 -->
+                    <div class="generation-queue">
+                        <h3>生成队列</h3>
+                        <div class="queue-list">
+                            <div class="queue-item completed">
+                                <div class="queue-status">✅</div>
+                                <div class="queue-info">
+                                    <div class="queue-name">场景1：霓虹街道</div>
+                                    <div class="queue-type">图片 + 视频</div>
+                                </div>
+                                <div class="queue-time">2分钟前</div>
+                            </div>
+                            <div class="queue-item completed">
+                                <div class="queue-status">✅</div>
+                                <div class="queue-info">
+                                    <div class="queue-name">场景2：公司大楼</div>
+                                    <div class="queue-type">图片 + 视频</div>
+                                </div>
+                                <div class="queue-time">1分钟前</div>
+                            </div>
+                            <div class="queue-item processing">
+                                <div class="queue-status">
+                                    <div class="spinner"></div>
+                                </div>
+                                <div class="queue-info">
+                                    <div class="queue-name">场景3：战斗画面</div>
+                                    <div class="queue-type">图片 + 视频</div>
+                                </div>
+                                <div class="queue-progress">75%</div>
+                            </div>
+                            <div class="queue-item pending">
+                                <div class="queue-status">⏳</div>
+                                <div class="queue-info">
+                                    <div class="queue-name">场景4：结局画面</div>
+                                    <div class="queue-type">图片 + 视频</div>
+                                </div>
+                                <div class="queue-time">等待中</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 视觉风格面板 -->
+            <div class="panel" id="panel-visual-style">
+                <div class="panel-header">
+                    <h2>视觉风格</h2>
+                    <p class="panel-desc">配置世界的视觉风格和色彩方案</p>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label>主色调</label>
+                        <div class="color-picker">
+                            <div class="color-option active" style="background: #00f0ff;" data-color="neon_blue"></div>
+                            <div class="color-option" style="background: #ff00ff;" data-color="neon_pink"></div>
+                            <div class="color-option" style="background: #9d00ff;" data-color="electric_purple"></div>
+                            <div class="color-option" style="background: #ff4400;" data-color="neon_orange"></div>
+                            <div class="color-option" style="background: #00ff88;" data-color="neon_green"></div>
+                            <input type="color" class="color-custom" value="#00f0ff">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>视觉元素</label>
+                        <div class="visual-elements">
+                            <label class="checkbox-card active">
+                                <input type="checkbox" checked>
+                                <span class="element-icon">🏙️</span>
+                                <span class="element-name">摩天大楼</span>
+                            </label>
+                            <label class="checkbox-card active">
+                                <input type="checkbox" checked>
+                                <span class="element-icon">🚁</span>
+                                <span class="element-name">飞行载具</span>
+                            </label>
+                            <label class="checkbox-card active">
+                                <input type="checkbox" checked>
+                                <span class="element-icon">📺</span>
+                                <span class="element-name">全息广告</span>
+                            </label>
+                            <label class="checkbox-card">
+                                <input type="checkbox">
+                                <span class="element-icon">🤖</span>
+                                <span class="element-name">机器人</span>
+                            </label>
+                            <label class="checkbox-card">
+                                <input type="checkbox">
+                                <span class="element-icon">🌧️</span>
+                                <span class="element-name">雨天</span>
+                            </label>
+                            <label class="checkbox-card">
+                                <input type="checkbox">
+                                <span class="element-icon">⚡</span>
+                                <span class="element-name">闪电</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>氛围参考图</label>
+                        <div class="reference-images">
+                            <div class="ref-image active">
+                                <img src="https://images.unsplash.com/photo-1515630278258-407f66498911?w=300&h=200&fit=crop" alt="赛博朋克">
+                                <div class="ref-overlay">✓</div>
+                            </div>
+                            <div class="ref-image">
+                                <img src="https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=300&h=200&fit=crop" alt="霓虹">
+                            </div>
+                            <div class="ref-image">
+                                <img src="https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=300&h=200&fit=crop" alt="城市">
+                            </div>
+                            <div class="ref-image add-new">
+                                <span class="add-icon">+</span>
+                                <span>添加参考图</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 右侧预览区 -->
+        <aside class="preview-panel">
+            <div class="preview-header">
+                <h3>实时预览</h3>
+                <div class="preview-tabs">
+                    <button class="preview-tab active" data-preview="video">视频</button>
+                    <button class="preview-tab" data-preview="images">图片</button>
+                    <button class="preview-tab" data-preview="flow">流程</button>
+                </div>
+            </div>
+            <div class="preview-content">
+                <!-- 视频预览 -->
+                <div class="preview-view active" id="preview-video">
+                    <div class="video-player">
+                        <div class="video-placeholder">
+                            <div class="play-button">▶</div>
+                            <p>点击预览视频</p>
+                        </div>
+                        <div class="video-controls">
+                            <button class="control-btn">⏮</button>
+                            <button class="control-btn">⏯</button>
+                            <button class="control-btn">⏭</button>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 35%"></div>
+                            </div>
+                            <span class="time">0:35 / 1:30</span>
+                        </div>
+                    </div>
+                    <div class="video-options-preview">
+                        <div class="option-preview-btn">
+                            <span class="option-text">前往核心区</span>
+                            <span class="option-hint">需要潜行技能50+</span>
+                        </div>
+                        <div class="option-preview-btn">
+                            <span class="option-text">前往工业区</span>
+                            <span class="option-hint">无特殊要求</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 图片预览 -->
+                <div class="preview-view" id="preview-images">
+                    <div class="image-gallery">
+                        <div class="gallery-main">
+                            <img src="https://images.unsplash.com/photo-1515630278258-407f66498911?w=600&h=400&fit=crop" alt="主图">
+                            <div class="image-info">
+                                <span>关键帧 1/6</span>
+                                <span>霓虹街道场景</span>
+                            </div>
+                        </div>
+                        <div class="gallery-thumbs">
+                            <div class="thumb active">
+                                <img src="https://images.unsplash.com/photo-1515630278258-407f66498911?w=100&h=75&fit=crop" alt="">
+                            </div>
+                            <div class="thumb">
+                                <img src="https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=100&h=75&fit=crop" alt="">
+                            </div>
+                            <div class="thumb">
+                                <img src="https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=100&h=75&fit=crop" alt="">
+                            </div>
+                            <div class="thumb">
+                                <img src="https://images.unsplash.com/photo-1515630278258-407f66498911?w=100&h=75&fit=crop" alt="">
+                            </div>
+                            <div class="thumb">
+                                <img src="https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=100&h=75&fit=crop" alt="">
+                            </div>
+                            <div class="thumb">
+                                <img src="https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=100&h=75&fit=crop" alt="">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 流程预览 -->
+                <div class="preview-view" id="preview-flow">
+                    <div class="flow-preview">
+                        <div class="flow-node start">
+                            <div class="node-box">开始</div>
+                        </div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node">
+                            <div class="node-box">
+                                <div class="node-video">🎬</div>
+                                <div class="node-title">霓虹街道</div>
+                            </div>
+                        </div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node">
+                            <div class="node-box">
+                                <div class="node-options">
+                                    <div class="node-option">核心区</div>
+                                    <div class="node-option">工业区</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flow-arrow">↓</div>
+                        <div class="flow-node">
+                            <div class="node-box">
+                                <div class="node-video">🎬</div>
+                                <div class="node-title">公司大楼</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="preview-actions">
+                <button class="btn btn-secondary btn-full">重新生成</button>
+                <button class="btn btn-primary btn-full">应用到节点</button>
+            </div>
+        </aside>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
