@@ -661,6 +661,198 @@
         </aside>
     </div>
 
+    <!-- 视频生成全屏覆盖层 -->
+    <div class="video-workflow-overlay" id="videoWorkflowOverlay">
+        <div class="overlay-header">
+            <div class="overlay-brand">
+                <span class="icon">🎬</span>
+                <span>AI视频生成</span>
+            </div>
+            <button class="overlay-close" id="overlayClose">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+        </div>
+        <div class="overlay-content">
+            <!-- 步骤指示器 -->
+            <div class="step-indicator">
+                <div class="step active" data-step="1">
+                    <div class="step-dot">1</div>
+                    <div class="step-label">描述场景</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="2">
+                    <div class="step-dot">2</div>
+                    <div class="step-label">选择素材</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="3">
+                    <div class="step-dot">3</div>
+                    <div class="step-label">生成图片</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step" data-step="4">
+                    <div class="step-dot">4</div>
+                    <div class="step-label">生成视频</div>
+                </div>
+            </div>
+
+            <!-- 步骤1：描述场景 -->
+            <div class="workflow-step-panel active" data-step-panel="1">
+                <div class="step-content">
+                    <h2>描述你的场景</h2>
+                    <p class="step-desc">当前节点：<span id="currentNodeName">霓虹街道</span></p>
+                    <div class="prompt-box">
+                        <textarea 
+                            class="prompt-textarea" 
+                            id="overlayPrompt"
+                            placeholder="描述你想生成的视频场景..."
+                            rows="4"
+                        ></textarea>
+                        <div class="prompt-actions">
+                            <button class="btn btn-ai" id="overlayAiOptimize">
+                                <span class="icon">✨</span>
+                                AI优化描述
+                            </button>
+                            <button class="btn btn-primary" id="overlayNext1">
+                                下一步
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                    <polyline points="12 5 19 12 12 19"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤2：选择素材 -->
+            <div class="workflow-step-panel" data-step-panel="2">
+                <div class="step-content">
+                    <h2>选择素材</h2>
+                    <p class="step-desc">选择要使用的角色卡、世界书和玩法集</p>
+                    <div class="overlay-assets">
+                        <div class="overlay-asset-section">
+                            <h3>角色卡</h3>
+                            <div class="overlay-asset-grid">
+                                <div class="overlay-asset-card" data-id="char1">
+                                    <div class="overlay-asset-img" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"></div>
+                                    <span>夜行者</span>
+                                </div>
+                                <div class="overlay-asset-card" data-id="char2">
+                                    <div class="overlay-asset-img" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></div>
+                                    <span>红狐</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overlay-asset-section">
+                            <h3>世界书</h3>
+                            <div class="overlay-asset-grid">
+                                <div class="overlay-asset-card selected" data-id="world1">
+                                    <div class="overlay-asset-img" style="background: linear-gradient(135deg, #00f0ff, #0066ff);"></div>
+                                    <span>赛博都市</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn btn-secondary" id="overlayPrev2">上一步</button>
+                        <button class="btn btn-primary" id="overlayNext2">开始生成图片</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤3：生成图片 -->
+            <div class="workflow-step-panel" data-step-panel="3">
+                <div class="step-content">
+                    <h2>选择图片</h2>
+                    <p class="step-desc">AI已生成4张图片，请选择最符合你想象的一张</p>
+                    <div class="overlay-image-grid" id="overlayImageGrid">
+                        <div class="overlay-image-card" data-index="0">
+                            <div class="overlay-image-placeholder">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                        <div class="overlay-image-card" data-index="1">
+                            <div class="overlay-image-placeholder">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                        <div class="overlay-image-card" data-index="2">
+                            <div class="overlay-image-placeholder">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                        <div class="overlay-image-card" data-index="3">
+                            <div class="overlay-image-placeholder">
+                                <div class="spinner"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn btn-secondary" id="overlayPrev3">上一步</button>
+                        <button class="btn btn-secondary" id="overlayRegenerate3">重新生成</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 步骤4：生成视频 -->
+            <div class="workflow-step-panel" data-step-panel="4">
+                <div class="step-content">
+                    <h2>生成视频</h2>
+                    <p class="step-desc">基于选中的图片生成视频</p>
+                    <div class="overlay-video-area">
+                        <div class="overlay-selected-image" id="overlaySelectedImage"></div>
+                        <div class="overlay-video-config">
+                            <div class="config-row">
+                                <label>视频时长</label>
+                                <select class="form-select" id="overlayDuration">
+                                    <option value="3">3秒</option>
+                                    <option value="5" selected>5秒</option>
+                                    <option value="10">10秒</option>
+                                </select>
+                            </div>
+                            <div class="config-row">
+                                <label>运动强度</label>
+                                <select class="form-select" id="overlayMotion">
+                                    <option value="low">低</option>
+                                    <option value="medium" selected>中</option>
+                                    <option value="high">高</option>
+                                </select>
+                            </div>
+                            <div class="config-row">
+                                <label>场景描述</label>
+                                <textarea class="form-textarea" id="overlaySceneText" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn btn-secondary" id="overlayPrev4">上一步</button>
+                        <button class="btn btn-primary" id="overlayGenerateVideo">生成视频</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 完成状态 -->
+            <div class="workflow-step-panel" data-step-panel="5">
+                <div class="step-content center">
+                    <div class="success-icon">🎉</div>
+                    <h2>视频生成完成！</h2>
+                    <p class="step-desc">视频已自动关联到当前节点</p>
+                    <div class="overlay-result-video">
+                        <div class="result-placeholder" id="resultPlaceholder"></div>
+                    </div>
+                    <div class="step-actions">
+                        <button class="btn btn-secondary" id="overlayNewVideo">生成新视频</button>
+                        <button class="btn btn-primary" id="overlayFinish">完成</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
