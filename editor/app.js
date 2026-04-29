@@ -763,6 +763,7 @@ const imageGenerator = new ImageGenerator();
 const videoGenerator = new VideoGenerator();
 const optionInjector = new OptionInjector();
 const videoOverlay = new VideoWorkflowOverlay();
+assetManager = new AssetManager();
 
 // 导出
 window.WorldBookEditor = WorldBookEditor;
@@ -771,6 +772,7 @@ window.ImageGenerator = ImageGenerator;
 window.VideoGenerator = VideoGenerator;
 window.OptionInjector = OptionInjector;
 window.VideoWorkflowOverlay = VideoWorkflowOverlay;
+window.AssetManager = AssetManager;
 
 // CSS动画
 const style = document.createElement('style');

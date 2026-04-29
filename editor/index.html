@@ -66,6 +66,15 @@
                 </ul>
             </div>
             <div class="sidebar-section">
+                <h3>素材库</h3>
+                <ul class="nav-list">
+                    <li class="nav-item" onclick="assetManager.openAssetManager(); return false;">
+                        <span class="icon">🗂️</span>
+                        <span>管理素材</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
                 <h3>视觉生成</h3>
                 <ul class="nav-list">
                     <li class="nav-item" data-panel="video-workflow">
@@ -853,6 +862,60 @@
         </div>
     </div>
 
+    <!-- 素材管理弹窗 -->
+    <div class="modal" id="assetManagerModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-content-lg">
+            <button class="modal-close" onclick="assetManager.closeAssetManager()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="asset-manager">
+                <div class="asset-manager-sidebar">
+                    <h3>素材库</h3>
+                    <ul class="asset-type-list">
+                        <li class="asset-type-item active" data-type="characters" onclick="assetManager.switchType('characters')">
+                            <span>👤</span> 角色卡
+                        </li>
+                        <li class="asset-type-item" data-type="worlds" onclick="assetManager.switchType('worlds')">
+                            <span>🌍</span> 世界书
+                        </li>
+                        <li class="asset-type-item" data-type="playsets" onclick="assetManager.switchType('playsets')">
+                            <span>🎮</span> 玩法集
+                        </li>
+                    </ul>
+                </div>
+                <div class="asset-manager-main" id="assetListContainer"></div>
+                <div class="asset-manager-detail" id="assetDetailContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑器弹窗 -->
+    <div class="modal" id="assetEditorModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-content-md">
+            <button class="modal-close" onclick="assetManager.closeEditor()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="asset-editor">
+                <h3 id="assetEditorTitle">新建</h3>
+                <form id="assetEditorForm" onsubmit="event.preventDefault(); assetManager.saveFromEditor();"></form>
+                <div class="editor-actions">
+                    <button type="button" class="btn btn-secondary" onclick="assetManager.closeEditor()">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="assetManager.saveFromEditor()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data-store.js"></script>
+    <script src="asset-manager.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

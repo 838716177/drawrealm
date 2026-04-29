@@ -1,21 +1,83 @@
 class VideoGeneratorApp {
     constructor() {
-        this.selectedAssets = {
-            characters: [],
-            worlds: [],
-            playsets: []
-        };
+        this.selectedAssets = [];
         this.generatedImages = [];
         this.selectedImage = null;
-        this.currentTab = 'characters';
         this.isGenerating = false;
+        this.isOptimizing = false;
+        this.currentFilter = 'all';
+        this.optimizedPrompt = null;
+        this.api = apiService;
+        this.works = this.loadWorks();
         this.init();
     }
 
     init() {
         this.bindEvents();
-        this.initAssetsPanel();
+        this.initWorksFilter();
+        this.renderWorks();
+        this.loadConfig();
     }
+
+    // ==================== 配置管理 ====================
+
+    loadConfig() {
+        const saved = localStorage.getItem('huijing_config');
+        if (saved) {
+            try {
+                const cfg = JSON.parse(saved);
+                Object.assign(CONFIG.frontend.apiKeys, cfg.apiKeys || {});
+                CONFIG.frontend.imageProvider = cfg.imageProvider || 'pollinations';
+                CONFIG.frontend.videoProvider = cfg.videoProvider || 'replicate';
+                CONFIG.frontend.textProvider = cfg.textProvider || 'openai';
+                CONFIG.mode = cfg.mode || 'frontend';
+            } catch (e) {
+                console.warn('配置加载失败', e);
+            }
+        }
+    }
+
+    saveConfig() {
+        const cfg = {
+            apiKeys: CONFIG.frontend.apiKeys,
+            imageProvider: CONFIG.frontend.imageProvider,
+            videoProvider: CONFIG.frontend.videoProvider,
+            textProvider: CONFIG.frontend.textProvider,
+            mode: CONFIG.mode,
+        };
+        localStorage.setItem('huijing_config', JSON.stringify(cfg));
+    }
+
+    openConfigModal() {
+        const modal = document.getElementById('configModal');
+        document.getElementById('configMode').value = CONFIG.mode;
+        document.getElementById('configImageProvider').value = CONFIG.frontend.imageProvider;
+        document.getElementById('configVideoProvider').value = CONFIG.frontend.videoProvider;
+        document.getElementById('configTextProvider').value = CONFIG.frontend.textProvider;
+        document.getElementById('configOpenaiKey').value = CONFIG.frontend.apiKeys.openai || '';
+        document.getElementById('configReplicateKey').value = CONFIG.frontend.apiKeys.replicate || '';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeConfigModal() {
+        document.getElementById('configModal').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    resetConfig() {
+        CONFIG.mode = 'frontend';
+        CONFIG.frontend.imageProvider = 'pollinations';
+        CONFIG.frontend.videoProvider = 'replicate';
+        CONFIG.frontend.textProvider = 'openai';
+        CONFIG.frontend.apiKeys = { openai: '', replicate: '', stability: '', anthropic: '', google: '' };
+        localStorage.removeItem('huijing_config');
+        this.loadConfig();
+        this.closeConfigModal();
+        this.showToast('配置已重置');
+    }
+
+    // ==================== 事件绑定 ====================
 
     bindEvents() {
         // 生成按钮
@@ -24,26 +86,38 @@ class VideoGeneratorApp {
             generateBtn.addEventListener('click', () => this.startGeneration());
         }
 
-        // 素材折叠
-        const assetsToggle = document.getElementById('assetsToggle');
-        if (assetsToggle) {
-            assetsToggle.addEventListener('click', () => this.toggleAssets());
+        // AI优化按钮
+        const aiOptimizeBtn = document.getElementById('aiOptimizeBtn');
+        if (aiOptimizeBtn) {
+            aiOptimizeBtn.addEventListener('click', () => this.optimizePrompt());
         }
 
-        // 素材标签切换
-        document.querySelectorAll('.asset-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => this.switchAssetTab(e.target.dataset.tab));
+        const optimizeBtn = document.getElementById('optimizeBtn');
+        if (optimizeBtn) {
+            optimizeBtn.addEventListener('click', () => this.optimizePrompt());
+        }
+
+        // 快捷素材选择
+        document.querySelectorAll('.quick-asset-item:not(.add-new)').forEach(item => {
+            item.addEventListener('click', (e) => this.toggleQuickAsset(e.currentTarget));
         });
 
-        // 素材卡片选择
-        document.querySelectorAll('.asset-card').forEach(card => {
-            card.addEventListener('click', (e) => this.toggleAssetSelection(e.currentTarget));
-        });
+        // 新建按钮
+        const createNewBtn = document.getElementById('createNewBtn');
+        if (createNewBtn) {
+            createNewBtn.addEventListener('click', () => {
+                document.getElementById('promptInput').focus();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
 
-        // 社区筛选
-        document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => this.switchFilter(e.target));
-        });
+        // 管理素材
+        const manageAssetsBtn = document.getElementById('manageAssetsBtn');
+        if (manageAssetsBtn) {
+            manageAssetsBtn.addEventListener('click', () => {
+                this.showToast('素材管理功能开发中...');
+            });
+        }
 
         // 重新生成
         const regenerateBtn = document.getElementById('regenerateBtn');
@@ -60,34 +134,48 @@ class VideoGeneratorApp {
         // 生成视频
         const generateVideoBtn = document.getElementById('generateVideoBtn');
         if (generateVideoBtn) {
-            generateVideoBtn.addEventListener('click', () => this.generateVideo());
+            generateVideoBtn.addEventListener('click', () => this.startVideoGeneration());
+        }
+
+        // 作品筛选
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => this.filterWorks(e.target.dataset.filter));
+        });
+
+        // 视图切换
+        const gridViewBtn = document.getElementById('gridViewBtn');
+        const listViewBtn = document.getElementById('listViewBtn');
+        if (gridViewBtn && listViewBtn) {
+            gridViewBtn.addEventListener('click', () => this.switchView('grid'));
+            listViewBtn.addEventListener('click', () => this.switchView('list'));
         }
 
         // 弹窗关闭
-        const modalClose = document.getElementById('modalClose');
-        if (modalClose) {
-            modalClose.addEventListener('click', () => this.closeModal());
-        }
+        document.getElementById('modalClose')?.addEventListener('click', () => this.closeModal('workDetailModal'));
+        document.getElementById('imageModalClose')?.addEventListener('click', () => this.closeModal('imageEditModal'));
+        document.getElementById('configModalClose')?.addEventListener('click', () => this.closeConfigModal());
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                e.target.parentElement.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        });
 
-        const modalOverlay = document.querySelector('.modal-overlay');
-        if (modalOverlay) {
-            modalOverlay.addEventListener('click', () => this.closeModal());
-        }
+        // 图片编辑确认
+        document.getElementById('confirmBtn')?.addEventListener('click', () => this.confirmImage());
+        document.getElementById('variantBtn')?.addEventListener('click', () => this.generateVariant());
 
-        // 确认使用
-        const confirmBtn = document.getElementById('confirmBtn');
-        if (confirmBtn) {
-            confirmBtn.addEventListener('click', () => this.confirmImage());
-        }
+        // 作品详情操作
+        document.getElementById('detailEditBtn')?.addEventListener('click', () => this.showToast('编辑功能开发中...'));
+        document.getElementById('detailRegenerateBtn')?.addEventListener('click', () => this.showToast('重新生成功能开发中...'));
+        document.getElementById('detailPublishBtn')?.addEventListener('click', () => this.publishWork());
 
-        // 生成变体
-        const variantBtn = document.getElementById('variantBtn');
-        if (variantBtn) {
-            variantBtn.addEventListener('click', () => this.generateVariant());
-        }
+        // 配置弹窗
+        document.getElementById('configSaveBtn')?.addEventListener('click', () => this.saveConfigFromModal());
+        document.getElementById('configResetBtn')?.addEventListener('click', () => this.resetConfig());
 
         // 回车生成
-        const textarea = document.querySelector('.input-textarea');
+        const textarea = document.getElementById('promptInput');
         if (textarea) {
             textarea.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -95,106 +183,61 @@ class VideoGeneratorApp {
                 }
             });
         }
-    }
 
-    initAssetsPanel() {
-        // 初始化素材面板状态
-        this.updateAssetGrid();
-    }
-
-    toggleAssets() {
-        const toggle = document.getElementById('assetsToggle');
-        const panel = document.getElementById('assetsPanel');
-        toggle.classList.toggle('expanded');
-        panel.classList.toggle('expanded');
-    }
-
-    switchAssetTab(tab) {
-        this.currentTab = tab;
-        document.querySelectorAll('.asset-tab').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.asset-tab[data-tab="${tab}"]`).classList.add('active');
-        this.updateAssetGrid();
-    }
-
-    updateAssetGrid() {
-        const grid = document.getElementById('characterGrid');
-        if (!grid) return;
-
-        // 模拟不同标签的数据
-        const data = this.getAssetData(this.currentTab);
-        grid.innerHTML = data.map(item => `
-            <div class="asset-card ${item.selected ? 'selected' : ''}" data-id="${item.id}" data-type="${this.currentTab}">
-                <div class="asset-image" style="${item.style}"></div>
-                <div class="asset-name">${item.name}</div>
-                <div class="asset-desc">${item.desc}</div>
-            </div>
-        `).join('') + `
-            <div class="asset-card add-new">
-                <div class="asset-image">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="5" x2="12" y2="19"/>
-                        <line x1="5" y1="12" x2="19" y2="12"/>
-                    </svg>
-                </div>
-                <div class="asset-name">新建${this.getAssetTypeName(this.currentTab)}</div>
-            </div>
-        `;
-
-        // 重新绑定事件
-        grid.querySelectorAll('.asset-card:not(.add-new)').forEach(card => {
-            card.addEventListener('click', (e) => this.toggleAssetSelection(e.currentTarget));
+        // Logo点击打开配置
+        document.querySelector('.logo')?.addEventListener('dblclick', () => {
+            this.openConfigModal();
         });
     }
 
-    getAssetData(type) {
-        const mockData = {
-            characters: [
-                { id: 'char1', name: '夜行者', desc: '赛博朋克雇佣兵', style: 'background: linear-gradient(135deg, #6366f1, #8b5cf6);', selected: false },
-                { id: 'char2', name: '红狐', desc: '神秘黑客', style: 'background: linear-gradient(135deg, #f59e0b, #ef4444);', selected: false },
-                { id: 'char3', name: '白医生', desc: '地下医生', style: 'background: linear-gradient(135deg, #10b981, #3b82f6);', selected: false },
-            ],
-            worlds: [
-                { id: 'world1', name: '赛博都市', desc: '2150年新上海', style: 'background: linear-gradient(135deg, #00f0ff, #0066ff);', selected: false },
-                { id: 'world2', name: '魔法王国', desc: '中古奇幻世界', style: 'background: linear-gradient(135deg, #ff00ff, #9900ff);', selected: false },
-                { id: 'world3', name: '废土世界', desc: '末日后的地球', style: 'background: linear-gradient(135deg, #ff6600, #cc3300);', selected: false },
-            ],
-            playsets: [
-                { id: 'play1', name: '侦探模式', desc: '解谜探案玩法', style: 'background: linear-gradient(135deg, #333333, #666666);', selected: false },
-                { id: 'play2', name: '战斗模式', desc: '即时战斗玩法', style: 'background: linear-gradient(135deg, #cc0000, #990000);', selected: false },
-                { id: 'play3', name: '恋爱模式', desc: '剧情互动玩法', style: 'background: linear-gradient(135deg, #ff69b4, #ff1493);', selected: false },
-            ]
-        };
-        return mockData[type] || [];
-    }
+    // ==================== AI提示词优化 ====================
 
-    getAssetTypeName(type) {
-        const names = {
-            characters: '角色',
-            worlds: '世界',
-            playsets: '玩法'
-        };
-        return names[type] || '';
-    }
+    async optimizePrompt() {
+        const textarea = document.getElementById('promptInput');
+        const prompt = textarea.value.trim();
 
-    toggleAssetSelection(card) {
-        if (card.classList.contains('add-new')) return;
+        if (!prompt) {
+            this.showToast('请先输入视频描述');
+            textarea.focus();
+            return;
+        }
 
-        const type = card.dataset.type;
-        const id = card.dataset.id;
+        if (this.isOptimizing) return;
+        this.isOptimizing = true;
 
-        card.classList.toggle('selected');
+        const btn = document.getElementById('aiOptimizeBtn');
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:12px;height:12px;border-width:2px;"></div><span>优化中...</span>';
 
-        if (card.classList.contains('selected')) {
-            if (!this.selectedAssets[type].includes(id)) {
-                this.selectedAssets[type].push(id);
-            }
-        } else {
-            this.selectedAssets[type] = this.selectedAssets[type].filter(i => i !== id);
+        try {
+            const optimized = await this.api.optimizePrompt(prompt, 'video');
+            this.optimizedPrompt = optimized;
+
+            // 显示优化后的提示词
+            textarea.value = optimized;
+            textarea.parentElement.classList.add('prompt-optimized');
+
+            this.showToast('提示词已AI优化 ✨');
+
+            // 3秒后移除高亮
+            setTimeout(() => {
+                textarea.parentElement.classList.remove('prompt-optimized');
+            }, 3000);
+        } catch (error) {
+            console.error('优化失败:', error);
+            this.showToast('优化失败: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            this.isOptimizing = false;
         }
     }
 
+    // ==================== 图片生成 ====================
+
     async startGeneration() {
-        const textarea = document.querySelector('.input-textarea');
+        const textarea = document.getElementById('promptInput');
         const prompt = textarea.value.trim();
 
         if (!prompt) {
@@ -208,68 +251,70 @@ class VideoGeneratorApp {
 
         const btn = document.getElementById('generateBtn');
         btn.disabled = true;
-        btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div><span>生成中...</span>';
+        btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span>生成中...</span>';
 
-        // 显示生成区域
+        // 隐藏作品区，显示生成区
         const generationSection = document.getElementById('generationSection');
         generationSection.classList.add('active');
-
-        // 滚动到生成区域
         generationSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-        // 模拟AI生成图片
-        await this.simulateImageGeneration(prompt);
+        // 重置视频区
+        document.getElementById('videoSection').classList.remove('active');
+
+        // 设置加载状态
+        this.setImageGridLoading();
+
+        try {
+            // 调用API生成图片
+            const images = await this.api.generateImages(prompt, { count: 4 });
+            this.generatedImages = images;
+            this.renderGeneratedImages(images);
+            this.showToast('图片生成完成！请选择一张');
+        } catch (error) {
+            console.error('生成失败:', error);
+            this.showToast('生成失败: ' + error.message);
+            // 回退到模拟数据
+            const mockImages = await this.api.mockImageGeneration(prompt, 4);
+            this.generatedImages = mockImages;
+            this.renderGeneratedImages(mockImages);
+            this.showToast('已使用演示模式');
+        }
 
         btn.disabled = false;
-        btn.innerHTML = '<span>生成</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+        btn.innerHTML = '<span>生成</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
         this.isGenerating = false;
     }
 
-    async simulateImageGeneration(prompt) {
+    setImageGridLoading() {
+        const grid = document.getElementById('imageGrid');
+        const cards = grid.querySelectorAll('.image-card');
+        cards.forEach(card => {
+            card.classList.add('generating');
+            card.innerHTML = '<div class="image-placeholder"><div class="spinner"></div></div>';
+            card.classList.remove('selected');
+        });
+    }
+
+    renderGeneratedImages(images) {
         const grid = document.getElementById('imageGrid');
         const cards = grid.querySelectorAll('.image-card');
 
-        // 模拟生成延迟
-        await this.delay(2000);
-
-        // 生成模拟图片数据
-        const gradients = [
-            'linear-gradient(135deg, #1a1a2e, #16213e)',
-            'linear-gradient(135deg, #2d1b69, #0f3460)',
-            'linear-gradient(135deg, #1e3a5f, #2d5a87)',
-            'linear-gradient(135deg, #3d1f00, #8b4513)'
-        ];
-
-        this.generatedImages = gradients.map((gradient, index) => ({
-            id: `img_${Date.now()}_${index}`,
-            gradient,
-            prompt: `${prompt} - 版本 ${index + 1}`,
-            text: this.generateSceneText(prompt, index)
-        }));
-
-        // 更新UI
         cards.forEach((card, index) => {
-            const data = this.generatedImages[index];
-            card.innerHTML = `
-                <div class="image-placeholder" style="background: ${data.gradient};">
-                    <div style="color: white; font-size: 14px; opacity: 0.8;">版本 ${index + 1}</div>
-                </div>
-            `;
-            card.addEventListener('click', () => this.selectImage(index));
+            card.classList.remove('generating');
+            if (images[index]) {
+                const data = images[index];
+                // 使用真实图片URL或渐变占位
+                if (data.url && data.url.startsWith('http')) {
+                    card.innerHTML = `<img src="${data.url}" alt="版本 ${index + 1}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'image-placeholder\\' style=\\'background:${data.gradient || 'var(--bg-tertiary)'}\\'><div style=\\'color:white;font-size:13px;opacity:0.8\\'>版本 ${index + 1}</div></div>'">`;
+                } else {
+                    card.innerHTML = `<div class="image-placeholder" style="background: ${data.gradient || 'var(--bg-tertiary)'};"><div style="color: white; font-size: 13px; opacity: 0.8;">版本 ${index + 1}</div></div>`;
+                }
+                card.onclick = () => this.selectImage(index);
+            }
         });
-
-        this.showToast('图片生成完成！请选择一张');
     }
 
-    generateSceneText(prompt, variant) {
-        const texts = [
-            `场景展开：${prompt}。画面中光影交错，氛围渐入佳境。`,
-            `镜头推进：${prompt}。细节逐渐清晰，故事缓缓展开。`,
-            `全景呈现：${prompt}。宏大场面一览无遗，震撼人心。`,
-            `特写切入：${prompt}。聚焦于核心元素，情感张力十足。`
-        ];
-        return texts[variant] || texts[0];
-    }
+    // ==================== 图片选择与编辑 ====================
 
     selectImage(index) {
         const cards = document.querySelectorAll('.image-card');
@@ -277,57 +322,32 @@ class VideoGeneratorApp {
         cards[index].classList.add('selected');
 
         this.selectedImage = this.generatedImages[index];
-
-        // 打开编辑弹窗
-        this.openEditModal(index);
+        this.openImageEditModal(index);
     }
 
-    openEditModal(index) {
+    openImageEditModal(index) {
         const modal = document.getElementById('imageEditModal');
         const image = document.getElementById('editImage');
         const textarea = document.getElementById('editTextarea');
         const data = this.generatedImages[index];
 
-        // 创建模拟图片
-        image.src = this.createPlaceholderImage(data.gradient);
-        textarea.value = data.text;
+        if (data.url && data.url.startsWith('http')) {
+            image.src = data.url;
+        } else {
+            image.src = data.url || this.api.createPlaceholderImage(data.gradient);
+        }
+        textarea.value = data.text || '';
 
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 
-    createPlaceholderImage(gradient) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 640;
-        canvas.height = 360;
-        const ctx = canvas.getContext('2d');
-
-        // 解析渐变
-        const colors = gradient.match(/#[a-fA-F0-9]{6}/g) || ['#1a1a2e', '#16213e'];
-        const grd = ctx.createLinearGradient(0, 0, 640, 360);
-        grd.addColorStop(0, colors[0]);
-        grd.addColorStop(1, colors[1]);
-        ctx.fillStyle = grd;
-        ctx.fillRect(0, 0, 640, 360);
-
-        // 添加一些装饰
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-        for (let i = 0; i < 20; i++) {
-            const x = Math.random() * 640;
-            const y = Math.random() * 360;
-            const r = Math.random() * 100 + 50;
-            ctx.beginPath();
-            ctx.arc(x, y, r, 0, Math.PI * 2);
-            ctx.fill();
+    closeModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
-
-        return canvas.toDataURL();
-    }
-
-    closeModal() {
-        const modal = document.getElementById('imageEditModal');
-        modal.classList.remove('active');
-        document.body.style.overflow = '';
     }
 
     confirmImage() {
@@ -335,13 +355,12 @@ class VideoGeneratorApp {
         if (this.selectedImage) {
             this.selectedImage.text = textarea.value;
         }
-        this.closeModal();
+        this.closeModal('imageEditModal');
         this.showVideoSection();
     }
 
     generateVariant() {
         this.showToast('正在生成变体...');
-        // 模拟变体生成
         setTimeout(() => {
             this.showToast('变体生成完成！');
         }, 1500);
@@ -352,52 +371,364 @@ class VideoGeneratorApp {
         const selectedImageEl = document.getElementById('selectedImage');
 
         videoSection.classList.add('active');
-        selectedImageEl.style.background = this.selectedImage.gradient;
+
+        // 显示选中的图片
+        if (this.selectedImage.url && this.selectedImage.url.startsWith('http')) {
+            selectedImageEl.style.background = `url(${this.selectedImage.url}) center/cover`;
+        } else {
+            selectedImageEl.style.background = this.selectedImage.gradient || 'var(--bg-tertiary)';
+        }
+
+        // 清除之前的视频结果
+        const existingResult = videoSection.querySelector('.video-result');
+        if (existingResult) existingResult.remove();
+        const existingStatus = videoSection.querySelector('.video-status');
+        if (existingStatus) existingStatus.remove();
 
         videoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    async generateVideo() {
+    // ==================== 视频生成 ====================
+
+    async startVideoGeneration() {
+        if (!this.selectedImage) {
+            this.showToast('请先选择一张图片');
+            return;
+        }
+
         const btn = document.getElementById('generateVideoBtn');
+        const videoSection = document.getElementById('videoSection');
+        const duration = document.getElementById('durationSelect')?.value || 5;
+        const motion = document.getElementById('motionSelect')?.value || 'medium';
+
         btn.disabled = true;
-        btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;"></div><span>生成视频中...</span>';
+        btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div><span>生成视频中...</span>';
 
-        // 模拟视频生成
-        await this.delay(3000);
+        // 显示状态
+        this.showVideoStatus('正在生成视频，请稍候...');
 
-        btn.innerHTML = '<span>视频生成完成！</span>';
-        this.showToast('视频生成成功！');
+        try {
+            // 获取图片URL
+            let imageUrl = this.selectedImage.url;
+            if (!imageUrl || !imageUrl.startsWith('http')) {
+                // 如果是base64或本地数据，需要上传到图床或转base64
+                // 这里使用 Pollinations 的免费图片作为fallback
+                imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(this.selectedImage.prompt)}?seed=${Date.now()}&width=1024&height=576&nologo=true`;
+            }
 
-        // 重置按钮
-        setTimeout(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<span>生成视频</span>';
-        }, 2000);
+            const result = await this.api.generateVideo(imageUrl, {
+                duration: parseInt(duration),
+                motion,
+            });
+
+            if (result.status === 'processing' && result.predictionId) {
+                // 异步任务，开始轮询
+                this.pollVideoStatus(result.predictionId, result.provider);
+            } else {
+                this.onVideoComplete(result);
+            }
+        } catch (error) {
+            console.error('视频生成失败:', error);
+            this.showToast('视频生成失败: ' + error.message);
+            this.updateVideoStatus('生成失败: ' + error.message);
+
+            // 演示模式回退
+            setTimeout(() => {
+                this.onVideoComplete({
+                    status: 'completed',
+                    url: null,
+                    message: '演示模式：视频生成完成',
+                });
+            }, 1500);
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<span>生成视频</span>';
+    }
+
+    showVideoStatus(message) {
+        const videoSection = document.getElementById('videoSection');
+        let statusEl = videoSection.querySelector('.video-status');
+        if (!statusEl) {
+            statusEl = document.createElement('div');
+            statusEl.className = 'video-status';
+            videoSection.appendChild(statusEl);
+        }
+        statusEl.innerHTML = `<div class="spinner"></div><span class="video-status-text">${message}</span>`;
+    }
+
+    updateVideoStatus(message) {
+        const videoSection = document.getElementById('videoSection');
+        const statusEl = videoSection.querySelector('.video-status');
+        if (statusEl) {
+            statusEl.innerHTML = `<span class="video-status-text">${message}</span>`;
+        }
+    }
+
+    async pollVideoStatus(taskId, provider) {
+        try {
+            const result = await this.api.checkVideoStatus(taskId, provider);
+            if (result.status === 'completed') {
+                this.onVideoComplete(result);
+            } else {
+                this.showVideoStatus(`生成中... ${Math.round((result.progress || 0.5) * 100)}%`);
+                setTimeout(() => this.pollVideoStatus(taskId, provider), 3000);
+            }
+        } catch (error) {
+            this.updateVideoStatus('查询状态失败: ' + error.message);
+        }
+    }
+
+    onVideoComplete(result) {
+        const videoSection = document.getElementById('videoSection');
+
+        // 移除状态提示
+        const statusEl = videoSection.querySelector('.video-status');
+        if (statusEl) statusEl.remove();
+
+        // 显示视频结果
+        let resultEl = videoSection.querySelector('.video-result');
+        if (!resultEl) {
+            resultEl = document.createElement('div');
+            resultEl.className = 'video-result';
+            videoSection.appendChild(resultEl);
+        }
+
+        if (result.url) {
+            resultEl.innerHTML = `<video src="${result.url}" controls autoplay loop></video>`;
+        } else {
+            // 演示模式，显示占位
+            resultEl.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:14px;">🎬 视频生成完成<br><small style="margin-top:8px;">演示模式：配置真实API后可播放</small></div>`;
+        }
+
+        // 添加到作品
+        this.addWork({
+            title: this.selectedImage.prompt.substring(0, 20) + '...',
+            prompt: this.selectedImage.prompt,
+            imageUrl: this.selectedImage.url,
+            videoUrl: result.url,
+            status: 'completed',
+            duration: document.getElementById('durationSelect')?.value || 5,
+        });
+
+        this.showToast('视频生成成功！已添加到我的作品');
+
+        // 滚动到结果
+        resultEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ==================== 作品管理 ====================
+
+    addWork(work) {
+        const newWork = {
+            id: `work_${Date.now()}`,
+            title: work.title || '未命名作品',
+            prompt: work.prompt || '',
+            imageUrl: work.imageUrl || '',
+            videoUrl: work.videoUrl || '',
+            status: work.status || 'completed',
+            duration: work.duration || 5,
+            createdAt: new Date().toISOString(),
+            gradient: this.selectedImage?.gradient || 'linear-gradient(135deg, #1a1a2e, #16213e)',
+        };
+
+        this.works.unshift(newWork);
+        this.saveWorks();
+        this.renderWorks();
+    }
+
+    loadWorks() {
+        const saved = localStorage.getItem('huijing_works');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                return this.getDefaultWorks();
+            }
+        }
+        return this.getDefaultWorks();
+    }
+
+    saveWorks() {
+        localStorage.setItem('huijing_works', JSON.stringify(this.works));
+    }
+
+    getDefaultWorks() {
+        return [
+            { id: 'work_1', title: '霓虹雨夜', prompt: '霓虹雨夜场景', status: 'completed', duration: 5, createdAt: new Date(Date.now() - 2 * 3600000).toISOString(), gradient: 'linear-gradient(135deg, #1a1a2e, #16213e)' },
+            { id: 'work_2', title: '魔法森林', prompt: '魔法森林场景', status: 'completed', duration: 3, createdAt: new Date(Date.now() - 86400000).toISOString(), gradient: 'linear-gradient(135deg, #2d1b69, #0f3460)' },
+            { id: 'work_3', title: '深海探险', prompt: '深海探险场景', status: 'processing', duration: 0, createdAt: new Date().toISOString(), gradient: 'linear-gradient(135deg, #1e3a5f, #2d5a87)' },
+            { id: 'work_4', title: '西部黄昏', prompt: '西部黄昏场景', status: 'published', duration: 5, createdAt: new Date(Date.now() - 3 * 86400000).toISOString(), gradient: 'linear-gradient(135deg, #3d1f00, #8b4513)' },
+            { id: 'work_5', title: '星空漫步', prompt: '星空漫步场景', status: 'completed', duration: 5, createdAt: new Date(Date.now() - 7 * 86400000).toISOString(), gradient: 'linear-gradient(135deg, #1a0a2e, #4a148c)' },
+            { id: 'work_6', title: '竹林剑影', prompt: '竹林剑影场景', status: 'completed', duration: 3, createdAt: new Date(Date.now() - 14 * 86400000).toISOString(), gradient: 'linear-gradient(135deg, #0d3328, #1a6b4e)' },
+        ];
+    }
+
+    renderWorks() {
+        const grid = document.getElementById('worksGrid');
+        if (!grid) return;
+
+        grid.innerHTML = this.works.map(work => this.createWorkCard(work)).join('');
+
+        // 重新绑定点击事件
+        grid.querySelectorAll('.work-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (!e.target.closest('.btn-menu') && !e.target.closest('.work-menu')) {
+                    this.openWorkDetail(card);
+                }
+            });
+        });
+
+        // 重新应用筛选
+        this.filterWorks(this.currentFilter);
+    }
+
+    createWorkCard(work) {
+        const timeText = this.formatTime(work.createdAt);
+        const statusClass = work.status;
+        const statusText = { completed: '已完成', processing: '生成中', published: '已发布' }[work.status] || work.status;
+        const durationText = work.duration > 0 ? `${work.duration}s` : '--';
+
+        return `
+            <div class="work-card" data-status="${work.status}" data-id="${work.id}">
+                <div class="work-thumbnail" style="background: ${work.gradient};">
+                    <div class="work-overlay ${work.status === 'processing' ? 'processing' : ''}">
+                        ${work.status === 'processing'
+                            ? '<div class="spinner"></div>'
+                            : `<button class="btn-play"><svg width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg></button>`
+                        }
+                    </div>
+                    <div class="work-duration">${durationText}</div>
+                    ${work.status !== 'processing' ? `
+                    <div class="work-menu">
+                        <button class="btn-menu">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
+                            </svg>
+                        </button>
+                    </div>` : ''}
+                </div>
+                <div class="work-info">
+                    <div class="work-title">${work.title}</div>
+                    <div class="work-meta">
+                        <span class="work-time">${timeText}</span>
+                        <span class="work-status ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    formatTime(isoString) {
+        const date = new Date(isoString);
+        const now = new Date();
+        const diff = now - date;
+
+        if (diff < 60000) return '刚刚';
+        if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+        if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+        if (diff < 7 * 86400000) return `${Math.floor(diff / 86400000)}天前`;
+        if (diff < 30 * 86400000) return `${Math.floor(diff / (7 * 86400000))}周前`;
+        return `${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+
+    publishWork() {
+        this.showToast('发布到社区功能开发中...');
+    }
+
+    // ==================== 原有功能 ====================
+
+    toggleQuickAsset(item) {
+        item.classList.toggle('selected');
+        const id = item.dataset.id;
+        const type = item.dataset.type;
+
+        if (item.classList.contains('selected')) {
+            this.selectedAssets.push({ id, type });
+        } else {
+            this.selectedAssets = this.selectedAssets.filter(a => a.id !== id);
+        }
     }
 
     regenerate() {
-        const textarea = document.querySelector('.input-textarea');
+        const textarea = document.getElementById('promptInput');
         if (textarea.value.trim()) {
             this.startGeneration();
         }
     }
 
     editPrompt() {
-        const inputSection = document.querySelector('.input-section');
-        inputSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        document.querySelector('.input-textarea').focus();
+        document.getElementById('createSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('promptInput').focus();
     }
 
-    switchFilter(tab) {
-        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
+    initWorksFilter() {
+        this.filterWorks('all');
+    }
 
-        // 模拟筛选动画
-        const grid = document.getElementById('masonryGrid');
-        grid.style.opacity = '0.5';
-        setTimeout(() => {
-            grid.style.opacity = '1';
-        }, 300);
+    filterWorks(filter) {
+        this.currentFilter = filter;
+
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.filter === filter);
+        });
+
+        const cards = document.querySelectorAll('.work-card');
+        cards.forEach(card => {
+            const status = card.dataset.status;
+            card.style.display = (filter === 'all' || status === filter) ? '' : 'none';
+        });
+    }
+
+    switchView(view) {
+        const gridBtn = document.getElementById('gridViewBtn');
+        const listBtn = document.getElementById('listViewBtn');
+        const worksGrid = document.getElementById('worksGrid');
+
+        if (view === 'grid') {
+            gridBtn.classList.add('active');
+            listBtn.classList.remove('active');
+            worksGrid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+        } else {
+            listBtn.classList.add('active');
+            gridBtn.classList.remove('active');
+            worksGrid.style.gridTemplateColumns = '1fr';
+        }
+    }
+
+    openWorkDetail(card) {
+        const workId = card.dataset.id;
+        const work = this.works.find(w => w.id === workId);
+        if (!work) return;
+
+        const modal = document.getElementById('workDetailModal');
+        const title = document.getElementById('detailTitle');
+        const time = document.getElementById('detailTime');
+        const status = document.getElementById('detailStatus');
+        const prompt = document.getElementById('detailPrompt');
+        const video = document.getElementById('detailVideo');
+
+        title.textContent = work.title;
+        time.textContent = this.formatTime(work.createdAt);
+        status.textContent = { completed: '已完成', processing: '生成中', published: '已发布' }[work.status] || work.status;
+        prompt.value = work.prompt || '';
+        video.style.background = work.gradient;
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    saveConfigFromModal() {
+        CONFIG.mode = document.getElementById('configMode').value;
+        CONFIG.frontend.imageProvider = document.getElementById('configImageProvider').value;
+        CONFIG.frontend.videoProvider = document.getElementById('configVideoProvider').value;
+        CONFIG.frontend.textProvider = document.getElementById('configTextProvider').value;
+        CONFIG.frontend.apiKeys.openai = document.getElementById('configOpenaiKey').value;
+        CONFIG.frontend.apiKeys.replicate = document.getElementById('configReplicateKey').value;
+
+        this.saveConfig();
+        this.closeConfigModal();
+        this.showToast('配置已保存');
     }
 
     showToast(message) {
@@ -406,21 +737,6 @@ class VideoGeneratorApp {
 
         const toast = document.createElement('div');
         toast.className = 'toast';
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 32px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-            padding: 14px 28px;
-            border-radius: var(--border-radius-sm);
-            border: 1px solid var(--primary);
-            z-index: 9999;
-            animation: slideUp 0.3s ease;
-            font-size: 14px;
-            box-shadow: var(--shadow-lg);
-        `;
         toast.textContent = message;
         document.body.appendChild(toast);
 
@@ -428,10 +744,6 @@ class VideoGeneratorApp {
             toast.style.animation = 'slideDown 0.3s ease';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
-    }
-
-    delay(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
 
@@ -443,16 +755,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // 添加CSS动画
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-    }
     @keyframes slideDown {
         from {
             opacity: 1;

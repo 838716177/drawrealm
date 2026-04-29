@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>绘境 - AI视频生成</title>
+    <title>绘境 - 创作中心</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -14,12 +14,17 @@
             <div class="logo">绘境</div>
         </div>
         <div class="nav-links">
-            <a href="#" class="nav-link active">探索</a>
-            <a href="#" class="nav-link">创作</a>
+            <a href="#" class="nav-link active">创作</a>
             <a href="#" class="nav-link">社区</a>
         </div>
         <div class="nav-actions">
-            <button class="btn btn-secondary">我的作品</button>
+            <button class="btn btn-secondary" id="createNewBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                新建
+            </button>
             <div class="user-avatar">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" alt="用户">
             </div>
@@ -28,75 +33,83 @@
 
     <!-- 主内容区 -->
     <main class="main-content">
-        <!-- 输入区 -->
-        <section class="input-section">
-            <div class="input-container">
-                <h1 class="input-title">描述你想生成的视频</h1>
+        <!-- 生成输入区（固定在顶部） -->
+        <section class="create-section" id="createSection">
+            <div class="create-container">
                 <div class="input-box">
-                    <textarea 
-                        class="input-textarea" 
-                        placeholder="例如：赛博朋克风格的雨夜街道，霓虹灯闪烁，一个身穿黑色风衣的主角站在雨中，远处有飞行汽车掠过..."
-                        rows="3"
+                    <textarea
+                        class="input-textarea"
+                        id="promptInput"
+                        placeholder="描述你想生成的视频内容..."
+                        rows="2"
                     ></textarea>
                     <div class="input-actions">
-                        <button class="btn-attach" title="添加参考图">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="17 8 12 3 7 8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                        </button>
-                        <button class="btn-generate" id="generateBtn">
-                            <span>生成</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="5" y1="12" x2="19" y2="12"/>
-                                <polyline points="12 5 19 12 12 19"/>
-                            </svg>
-                        </button>
+                        <div class="input-left">
+                            <button class="btn-icon" title="添加参考图" id="attachBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                            </button>
+                            <button class="btn-icon" title="使用素材" id="assetBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                </svg>
+                            </button>
+                            <button class="btn-icon" title="AI优化提示词" id="optimizeBtn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                                    <path d="M2 17l10 5 10-5"/>
+                                    <path d="M2 12l10 5 10-5"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="input-right">
+                            <button class="btn-ai-optimize" id="aiOptimizeBtn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                                </svg>
+                                <span>AI优化</span>
+                            </button>
+                            <button class="btn-generate" id="generateBtn">
+                                <span>生成</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                    <polyline points="12 5 19 12 12 19"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                
-                <!-- 素材选择区（可折叠） -->
-                <div class="assets-section">
-                    <button class="assets-toggle" id="assetsToggle">
-                        <span>使用我的素材</span>
-                        <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="6 9 12 15 18 9"/>
-                        </svg>
-                    </button>
-                    <div class="assets-panel" id="assetsPanel">
-                        <div class="assets-tabs">
-                            <button class="asset-tab active" data-tab="characters">角色卡</button>
-                            <button class="asset-tab" data-tab="worlds">世界书</button>
-                            <button class="asset-tab" data-tab="playsets">玩法集</button>
+
+                <!-- 快捷素材面板 -->
+                <div class="quick-assets" id="quickAssets">
+                    <div class="quick-assets-header">
+                        <span>快捷素材</span>
+                        <button class="btn-text" id="manageAssetsBtn">管理素材</button>
+                    </div>
+                    <div class="quick-assets-list">
+                        <div class="quick-asset-item" data-type="character" data-id="char1">
+                            <div class="quick-asset-img" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"></div>
+                            <span>夜行者</span>
                         </div>
-                        <div class="assets-content">
-                            <div class="asset-grid" id="characterGrid">
-                                <div class="asset-card" data-id="char1">
-                                    <div class="asset-image" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);"></div>
-                                    <div class="asset-name">夜行者</div>
-                                    <div class="asset-desc">赛博朋克雇佣兵</div>
-                                </div>
-                                <div class="asset-card" data-id="char2">
-                                    <div class="asset-image" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></div>
-                                    <div class="asset-name">红狐</div>
-                                    <div class="asset-desc">神秘黑客</div>
-                                </div>
-                                <div class="asset-card" data-id="char3">
-                                    <div class="asset-image" style="background: linear-gradient(135deg, #10b981, #3b82f6);"></div>
-                                    <div class="asset-name">白医生</div>
-                                    <div class="asset-desc">地下医生</div>
-                                </div>
-                                <div class="asset-card add-new">
-                                    <div class="asset-image">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <line x1="12" y1="5" x2="12" y2="19"/>
-                                            <line x1="5" y1="12" x2="19" y2="12"/>
-                                        </svg>
-                                    </div>
-                                    <div class="asset-name">新建角色</div>
-                                </div>
+                        <div class="quick-asset-item" data-type="world" data-id="world1">
+                            <div class="quick-asset-img" style="background: linear-gradient(135deg, #00f0ff, #0066ff);"></div>
+                            <span>赛博都市</span>
+                        </div>
+                        <div class="quick-asset-item" data-type="playset" data-id="play1">
+                            <div class="quick-asset-img" style="background: linear-gradient(135deg, #f59e0b, #ef4444);"></div>
+                            <span>侦探模式</span>
+                        </div>
+                        <div class="quick-asset-item add-new">
+                            <div class="quick-asset-img">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
                             </div>
+                            <span>添加</span>
                         </div>
                     </div>
                 </div>
@@ -106,35 +119,31 @@
         <!-- 生成结果区（默认隐藏） -->
         <section class="generation-section" id="generationSection">
             <div class="generation-header">
-                <h2>生成结果</h2>
+                <h3>生成结果</h3>
                 <div class="generation-actions">
-                    <button class="btn btn-secondary" id="regenerateBtn">重新生成</button>
-                    <button class="btn btn-secondary" id="editPromptBtn">修改描述</button>
+                    <button class="btn btn-text" id="regenerateBtn">重新生成</button>
+                    <button class="btn btn-text" id="editPromptBtn">修改描述</button>
                 </div>
             </div>
             <div class="image-grid" id="imageGrid">
                 <div class="image-card" data-index="0">
                     <div class="image-placeholder">
                         <div class="spinner"></div>
-                        <span>生成中...</span>
                     </div>
                 </div>
                 <div class="image-card" data-index="1">
                     <div class="image-placeholder">
                         <div class="spinner"></div>
-                        <span>生成中...</span>
                     </div>
                 </div>
                 <div class="image-card" data-index="2">
                     <div class="image-placeholder">
                         <div class="spinner"></div>
-                        <span>生成中...</span>
                     </div>
                 </div>
                 <div class="image-card" data-index="3">
                     <div class="image-placeholder">
                         <div class="spinner"></div>
-                        <span>生成中...</span>
                     </div>
                 </div>
             </div>
@@ -143,7 +152,7 @@
         <!-- 视频生成区（选中图片后显示） -->
         <section class="video-section" id="videoSection">
             <div class="video-header">
-                <h2>视频生成</h2>
+                <h3>生成视频</h3>
                 <div class="video-config">
                     <div class="config-item">
                         <label>时长</label>
@@ -154,7 +163,7 @@
                         </select>
                     </div>
                     <div class="config-item">
-                        <label>运动强度</label>
+                        <label>运动</label>
                         <select class="config-select" id="motionSelect">
                             <option value="low">低</option>
                             <option value="medium" selected>中</option>
@@ -173,130 +182,192 @@
             </div>
         </section>
 
-        <!-- 社区作品流 -->
-        <section class="community-section">
+        <!-- 我的作品 -->
+        <section class="works-section">
             <div class="section-header">
-                <h2>探索社区创作</h2>
-                <div class="filter-tabs">
-                    <button class="filter-tab active" data-filter="all">全部</button>
-                    <button class="filter-tab" data-filter="scifi">科幻</button>
-                    <button class="filter-tab" data-filter="fantasy">奇幻</button>
-                    <button class="filter-tab" data-filter="anime">动漫</button>
-                    <button class="filter-tab" data-filter="realistic">写实</button>
+                <div class="section-title">
+                    <h2>我的作品</h2>
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" data-filter="all">全部</button>
+                        <button class="filter-tab" data-filter="processing">生成中</button>
+                        <button class="filter-tab" data-filter="completed">已完成</button>
+                        <button class="filter-tab" data-filter="published">已发布</button>
+                    </div>
+                </div>
+                <div class="view-toggle">
+                    <button class="btn-icon active" id="gridViewBtn" title="网格视图">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/>
+                            <rect x="14" y="3" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                    </button>
+                    <button class="btn-icon" id="listViewBtn" title="列表视图">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="8" y1="6" x2="21" y2="6"/>
+                            <line x1="8" y1="12" x2="21" y2="12"/>
+                            <line x1="8" y1="18" x2="21" y2="18"/>
+                            <line x1="3" y1="6" x2="3.01" y2="6"/>
+                            <line x1="3" y1="12" x2="3.01" y2="12"/>
+                            <line x1="3" y1="18" x2="3.01" y2="18"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
-            <div class="masonry-grid" id="masonryGrid">
-                <div class="masonry-item">
-                    <div class="video-card">
-                        <div class="video-thumbnail" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
-                            <div class="play-overlay">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="white" stroke="none">
+            <div class="works-grid" id="worksGrid">
+                <div class="work-card" data-status="completed">
+                    <div class="work-thumbnail" style="background: linear-gradient(135deg, #1a1a2e, #16213e);">
+                        <div class="work-overlay">
+                            <button class="btn-play">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none">
                                     <polygon points="5 3 19 12 5 21 5 3"/>
                                 </svg>
-                            </div>
-                            <div class="video-duration">5s</div>
+                            </button>
                         </div>
-                        <div class="video-info">
-                            <div class="video-title">霓虹雨夜</div>
-                            <div class="video-meta">
-                                <span class="video-author">@赛博诗人</span>
-                                <span class="video-stats">1.2k 播放</span>
-                            </div>
+                        <div class="work-duration">5s</div>
+                        <div class="work-menu">
+                            <button class="btn-menu">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="5" r="1"/>
+                                    <circle cx="12" cy="12" r="1"/>
+                                    <circle cx="12" cy="19" r="1"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="work-info">
+                        <div class="work-title">霓虹雨夜</div>
+                        <div class="work-meta">
+                            <span class="work-time">2小时前</span>
+                            <span class="work-status completed">已完成</span>
                         </div>
                     </div>
                 </div>
-                <div class="masonry-item">
-                    <div class="video-card">
-                        <div class="video-thumbnail" style="background: linear-gradient(135deg, #2d1b69, #0f3460);">
-                            <div class="play-overlay">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="white" stroke="none">
+                <div class="work-card" data-status="completed">
+                    <div class="work-thumbnail" style="background: linear-gradient(135deg, #2d1b69, #0f3460);">
+                        <div class="work-overlay">
+                            <button class="btn-play">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none">
                                     <polygon points="5 3 19 12 5 21 5 3"/>
                                 </svg>
-                            </div>
-                            <div class="video-duration">3s</div>
+                            </button>
                         </div>
-                        <div class="video-info">
-                            <div class="video-title">魔法森林</div>
-                            <div class="video-meta">
-                                <span class="video-author">@幻想家</span>
-                                <span class="video-stats">856 播放</span>
-                            </div>
+                        <div class="work-duration">3s</div>
+                        <div class="work-menu">
+                            <button class="btn-menu">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="5" r="1"/>
+                                    <circle cx="12" cy="12" r="1"/>
+                                    <circle cx="12" cy="19" r="1"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="work-info">
+                        <div class="work-title">魔法森林</div>
+                        <div class="work-meta">
+                            <span class="work-time">昨天</span>
+                            <span class="work-status completed">已完成</span>
                         </div>
                     </div>
                 </div>
-                <div class="masonry-item">
-                    <div class="video-card">
-                        <div class="video-thumbnail" style="background: linear-gradient(135deg, #1e3a5f, #2d5a87);">
-                            <div class="play-overlay">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="white" stroke="none">
-                                    <polygon points="5 3 19 12 5 21 5 3"/>
-                                </svg>
-                            </div>
-                            <div class="video-duration">10s</div>
+                <div class="work-card" data-status="processing">
+                    <div class="work-thumbnail" style="background: linear-gradient(135deg, #1e3a5f, #2d5a87);">
+                        <div class="work-overlay processing">
+                            <div class="spinner"></div>
                         </div>
-                        <div class="video-info">
-                            <div class="video-title">深海探险</div>
-                            <div class="video-meta">
-                                <span class="video-author">@海洋之心</span>
-                                <span class="video-stats">2.3k 播放</span>
-                            </div>
+                        <div class="work-duration">--</div>
+                    </div>
+                    <div class="work-info">
+                        <div class="work-title">深海探险</div>
+                        <div class="work-meta">
+                            <span class="work-time">刚刚</span>
+                            <span class="work-status processing">生成中</span>
                         </div>
                     </div>
                 </div>
-                <div class="masonry-item">
-                    <div class="video-card">
-                        <div class="video-thumbnail" style="background: linear-gradient(135deg, #3d1f00, #8b4513);">
-                            <div class="play-overlay">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="white" stroke="none">
+                <div class="work-card" data-status="published">
+                    <div class="work-thumbnail" style="background: linear-gradient(135deg, #3d1f00, #8b4513);">
+                        <div class="work-overlay">
+                            <button class="btn-play">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none">
                                     <polygon points="5 3 19 12 5 21 5 3"/>
                                 </svg>
-                            </div>
-                            <div class="video-duration">5s</div>
+                            </button>
                         </div>
-                        <div class="video-info">
-                            <div class="video-title">西部黄昏</div>
-                            <div class="video-meta">
-                                <span class="video-author">@牛仔杰克</span>
-                                <span class="video-stats">567 播放</span>
-                            </div>
+                        <div class="work-duration">5s</div>
+                        <div class="work-menu">
+                            <button class="btn-menu">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="5" r="1"/>
+                                    <circle cx="12" cy="12" r="1"/>
+                                    <circle cx="12" cy="19" r="1"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="work-info">
+                        <div class="work-title">西部黄昏</div>
+                        <div class="work-meta">
+                            <span class="work-time">3天前</span>
+                            <span class="work-status published">已发布</span>
                         </div>
                     </div>
                 </div>
-                <div class="masonry-item">
-                    <div class="video-card">
-                        <div class="video-thumbnail" style="background: linear-gradient(135deg, #1a0a2e, #4a148c);">
-                            <div class="play-overlay">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="white" stroke="none">
+                <div class="work-card" data-status="completed">
+                    <div class="work-thumbnail" style="background: linear-gradient(135deg, #1a0a2e, #4a148c);">
+                        <div class="work-overlay">
+                            <button class="btn-play">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none">
                                     <polygon points="5 3 19 12 5 21 5 3"/>
                                 </svg>
-                            </div>
-                            <div class="video-duration">5s</div>
+                            </button>
                         </div>
-                        <div class="video-info">
-                            <div class="video-title">星空漫步</div>
-                            <div class="video-meta">
-                                <span class="video-author">@星际旅人</span>
-                                <span class="video-stats">3.1k 播放</span>
-                            </div>
+                        <div class="work-duration">5s</div>
+                        <div class="work-menu">
+                            <button class="btn-menu">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="5" r="1"/>
+                                    <circle cx="12" cy="12" r="1"/>
+                                    <circle cx="12" cy="19" r="1"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="work-info">
+                        <div class="work-title">星空漫步</div>
+                        <div class="work-meta">
+                            <span class="work-time">1周前</span>
+                            <span class="work-status completed">已完成</span>
                         </div>
                     </div>
                 </div>
-                <div class="masonry-item">
-                    <div class="video-card">
-                        <div class="video-thumbnail" style="background: linear-gradient(135deg, #0d3328, #1a6b4e);">
-                            <div class="play-overlay">
-                                <svg width="48" height="48" viewBox="0 0 24 24" fill="white" stroke="none">
+                <div class="work-card" data-status="completed">
+                    <div class="work-thumbnail" style="background: linear-gradient(135deg, #0d3328, #1a6b4e);">
+                        <div class="work-overlay">
+                            <button class="btn-play">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="white" stroke="none">
                                     <polygon points="5 3 19 12 5 21 5 3"/>
                                 </svg>
-                            </div>
-                            <div class="video-duration">3s</div>
+                            </button>
                         </div>
-                        <div class="video-info">
-                            <div class="video-title">竹林剑影</div>
-                            <div class="video-meta">
-                                <span class="video-author">@武侠迷</span>
-                                <span class="video-stats">1.8k 播放</span>
-                            </div>
+                        <div class="work-duration">3s</div>
+                        <div class="work-menu">
+                            <button class="btn-menu">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="5" r="1"/>
+                                    <circle cx="12" cy="12" r="1"/>
+                                    <circle cx="12" cy="19" r="1"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="work-info">
+                        <div class="work-title">竹林剑影</div>
+                        <div class="work-meta">
+                            <span class="work-time">2周前</span>
+                            <span class="work-status completed">已完成</span>
                         </div>
                     </div>
                 </div>
@@ -304,12 +375,46 @@
         </section>
     </main>
 
+    <!-- 作品详情弹窗 -->
+    <div class="modal" id="workDetailModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="modal-body">
+                <div class="detail-preview">
+                    <div class="detail-video" id="detailVideo"></div>
+                </div>
+                <div class="detail-panel">
+                    <h3 id="detailTitle">作品标题</h3>
+                    <div class="detail-meta">
+                        <span id="detailTime">创建时间</span>
+                        <span id="detailStatus">状态</span>
+                    </div>
+                    <div class="detail-prompt">
+                        <label>提示词</label>
+                        <textarea class="detail-textarea" id="detailPrompt" rows="3" readonly></textarea>
+                    </div>
+                    <div class="detail-actions">
+                        <button class="btn btn-secondary" id="detailEditBtn">编辑描述</button>
+                        <button class="btn btn-secondary" id="detailRegenerateBtn">重新生成</button>
+                        <button class="btn btn-primary" id="detailPublishBtn">发布到社区</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 图片编辑弹窗 -->
     <div class="modal" id="imageEditModal">
         <div class="modal-overlay"></div>
         <div class="modal-content">
-            <button class="modal-close" id="modalClose">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="modal-close" id="imageModalClose">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                 </svg>
@@ -330,6 +435,63 @@
         </div>
     </div>
 
+    <!-- 配置弹窗 -->
+    <div class="modal" id="configModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-content-sm">
+            <button class="modal-close" id="configModalClose">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+            </button>
+            <div class="config-panel">
+                <h3>API 配置</h3>
+                <div class="config-section">
+                    <label>运行模式</label>
+                    <select class="config-select" id="configMode">
+                        <option value="frontend">前端直连（演示）</option>
+                        <option value="backend">后端代理</option>
+                    </select>
+                </div>
+                <div class="config-section">
+                    <label>图片生成服务商</label>
+                    <select class="config-select" id="configImageProvider">
+                        <option value="pollinations">Pollinations（免费）</option>
+                        <option value="openai">OpenAI DALL-E</option>
+                        <option value="replicate">Replicate</option>
+                        <option value="stability">Stability AI</option>
+                    </select>
+                </div>
+                <div class="config-section">
+                    <label>视频生成服务商</label>
+                    <select class="config-select" id="configVideoProvider">
+                        <option value="replicate">Replicate</option>
+                    </select>
+                </div>
+                <div class="config-section">
+                    <label>文本优化服务商</label>
+                    <select class="config-select" id="configTextProvider">
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic Claude</option>
+                        <option value="google">Google Gemini</option>
+                    </select>
+                </div>
+                <div class="config-section" id="apiKeySection">
+                    <label>API Keys</label>
+                    <input type="password" class="config-input" id="configOpenaiKey" placeholder="OpenAI API Key">
+                    <input type="password" class="config-input" id="configReplicateKey" placeholder="Replicate API Token">
+                </div>
+                <div class="config-actions">
+                    <button class="btn btn-secondary" id="configResetBtn">重置</button>
+                    <button class="btn btn-primary" id="configSaveBtn">保存配置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="api-service.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
