@@ -478,15 +478,188 @@ class AssetManager {
     // ==================== AI生成 ====================
 
     async aiGenerateImage(charId) {
-        this.showToast('AI生成形象功能开发中...');
+        const char = this.store.getById('characters', charId);
+        if (!char) return;
+
+        this.showToast(`正在为 "${char.name}" 生成形象...`);
+        await this.delay(2000);
+
+        // 模拟生成完成，更新角色头像背景
+        const gradients = [
+            'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            'linear-gradient(135deg, #f59e0b, #ef4444)',
+            'linear-gradient(135deg, #10b981, #3b82f6)',
+            'linear-gradient(135deg, #ec4899, #8b5cf6)'
+        ];
+        const randomGradient = gradients[Math.floor(Math.random() * gradients.length)];
+
+        // 更新详情面板中的头像预览
+        const detailContainer = document.getElementById('assetDetailContainer');
+        if (detailContainer) {
+            const avatarEl = detailContainer.querySelector('.char-avatar-preview');
+            if (avatarEl) {
+                avatarEl.style.background = randomGradient;
+            }
+        }
+
+        this.showToast(`"${char.name}" 的形象生成完成！`);
     }
 
     async aiExpandWorld(worldId) {
-        this.showToast('AI扩展设定功能开发中...');
+        const world = this.store.getById('worlds', worldId);
+        if (!world) return;
+
+        this.showToast(`正在扩展 "${world.name}" 的设定...`);
+        await this.delay(2000);
+
+        // 扩写世界描述
+        if (world.description) {
+            world.description += '\n\n这个世界充满了机遇与危险。在霓虹灯照不到的角落，隐藏着改变命运的秘密。';
+        }
+
+        // 添加更多地区
+        if (!world.geography) world.geography = { regions: [] };
+        world.geography.regions.push({
+            name: '新区域_' + Math.floor(Math.random() * 100),
+            description: 'AI自动生成的神秘区域，等待探索'
+        });
+
+        this.store.save('worlds', world);
+        this.renderDetail();
+        this.showToast(`"${world.name}" 的设定已扩展！`);
     }
 
     async aiGenerateScenes(playsetId) {
-        this.showToast('AI生成场景功能开发中...');
+        const playset = this.store.getById('playsets', playsetId);
+        if (!playset) return;
+
+        this.showToast(`正在为 "${playset.name}" 生成场景...`);
+        await this.delay(2000);
+
+        if (!playset.scenes) playset.scenes = [];
+        const sceneNames = ['秘密基地', '废弃工厂', '地下酒吧', '高空平台', '数据核心'];
+        const randomScene = sceneNames[Math.floor(Math.random() * sceneNames.length)];
+
+        playset.scenes.push({
+            name: randomScene,
+            description: `AI生成的${randomScene}场景，充满未知与挑战`
+        });
+
+        this.store.save('playsets', playset);
+        this.renderDetail();
+        this.showToast(`新场景 "${randomScene}" 生成完成！`);
+    }
+
+    // ==================== 导入导出 ====================
+
+    exportData(type = this.currentType) {
+        const items = this.store.getAll(type);
+        const dataStr = JSON.stringify(items, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `huijing_${type}_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        this.showToast(`${this.getTypeLabel()}数据已导出`);
+    }
+
+    importData(type = this.currentType) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const items = JSON.parse(event.target.result);
+                    if (Array.isArray(items)) {
+                        items.forEach(item => {
+                            item.id = item.id || `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                            this.store.save(type, item);
+                        });
+                        this.renderList();
+                        this.showToast(`成功导入 ${items.length} 个${this.getTypeLabel()}`);
+                    } else {
+                        this.showToast('文件格式错误');
+                    }
+                } catch (err) {
+                    this.showToast('导入失败：' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+
+    // ==================== 批量操作 ====================
+
+    batchDelete() {
+        const items = this.store.getAll(this.currentType);
+        if (items.length === 0) {
+            this.showToast('没有可删除的' + this.getTypeLabel());
+            return;
+        }
+
+        if (confirm(`确定要清空所有${this.getTypeLabel()}吗？此操作不可恢复！`)) {
+            localStorage.setItem(this.store.keys[this.currentType], '[]');
+            this.currentItem = null;
+            this.renderList();
+            this.renderDetail();
+            this.showToast(`所有${this.getTypeLabel()}已清空`);
+        }
+    }
+
+    duplicateItem(id) {
+        const item = this.store.getById(this.currentType, id);
+        if (!item) return;
+
+        const newItem = { ...item };
+        newItem.id = `${this.currentType}_${Date.now()}`;
+        newItem.name = `${item.name} (副本)`;
+        newItem.createdAt = new Date().toISOString();
+        newItem.updatedAt = newItem.createdAt;
+
+        this.store.save(this.currentType, newItem);
+        this.renderList();
+        this.showToast(`"${item.name}" 已复制`);
+    }
+
+    // ==================== 筛选排序 ====================
+
+    sortItems(sortBy = 'name') {
+        let items = this.store.getAll(this.currentType);
+
+        switch (sortBy) {
+            case 'name':
+                items.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                break;
+            case 'date':
+                items.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+                break;
+            case 'type':
+                items.sort((a, b) => (a.type || '').localeCompare(b.type || ''));
+                break;
+        }
+
+        // 更新显示
+        const container = document.getElementById('assetListContainer');
+        const grid = container.querySelector('.asset-grid');
+        if (grid) {
+            grid.innerHTML = items.map(item => this.createAssetCard(item, this.currentType)).join('');
+        }
+    }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
     }
 }
 

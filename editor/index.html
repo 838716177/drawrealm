@@ -66,6 +66,53 @@
                 </ul>
             </div>
             <div class="sidebar-section">
+                <h3>社交互联</h3>
+                <ul class="nav-list">
+                    <li class="nav-item" data-panel="social-friends">
+                        <span class="icon">👥</span>
+                        <span>好友动态</span>
+                    </li>
+                    <li class="nav-item" data-panel="social-guilds">
+                        <span class="icon">🏰</span>
+                        <span>公会联盟</span>
+                    </li>
+                    <li class="nav-item" data-panel="social-leaderboard">
+                        <span class="icon">🏆</span>
+                        <span>排行榜</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>交易市场</h3>
+                <ul class="nav-list">
+                    <li class="nav-item" data-panel="market-listings">
+                        <span class="icon">🏪</span>
+                        <span>市场清单</span>
+                    </li>
+                    <li class="nav-item" data-panel="market-auctions">
+                        <span class="icon">🔨</span>
+                        <span>拍卖行</span>
+                    </li>
+                    <li class="nav-item" data-panel="market-creator">
+                        <span class="icon">💰</span>
+                        <span>创作者中心</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>角色养成</h3>
+                <ul class="nav-list">
+                    <li class="nav-item" data-panel="growth-skills">
+                        <span class="icon">📊</span>
+                        <span>技能树</span>
+                    </li>
+                    <li class="nav-item" data-panel="growth-equipment">
+                        <span class="icon">⚔️</span>
+                        <span>装备管理</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
                 <h3>素材库</h3>
                 <ul class="nav-list">
                     <li class="nav-item" onclick="assetManager.openAssetManager(); return false;">
@@ -482,6 +529,472 @@
                 </div>
             </div>
 
+            <!-- 世界规则面板 -->
+            <div class="panel" id="panel-rules">
+                <div class="panel-header">
+                    <h2>世界规则</h2>
+                    <p class="panel-desc">定义世界运行的核心规则与物理法则</p>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label>科技水平</label>
+                        <textarea class="form-textarea" id="ruleTech" rows="3" placeholder="描述世界的科技水平，如：高科技与贫民窟并存，义体改造普遍..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>社会结构</label>
+                        <textarea class="form-textarea" id="ruleSociety" rows="3" placeholder="描述社会形态，如：公司统治，阶级固化严重..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>魔法/超自然体系</label>
+                        <textarea class="form-textarea" id="ruleMagic" rows="3" placeholder="描述魔法或超自然力量体系，如：无魔法，科技替代..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>危险等级与限制</label>
+                        <textarea class="form-textarea" id="ruleDanger" rows="3" placeholder="描述世界中的危险和限制，如：街头危险，公司区安全但受监控..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>自定义规则条目</label>
+                        <div id="customRulesList" class="dynamic-list">
+                            <div class="dynamic-item">
+                                <input type="text" class="form-input" placeholder="规则名称" value="经济系统">
+                                <textarea class="form-textarea" rows="2" placeholder="规则描述">信用点为主要货币，黑市使用加密货币交易</textarea>
+                                <button class="btn-icon-sm" onclick="editor.removeDynamicItem(this)" title="删除">🗑️</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="addCustomRule" style="margin-top:8px;">
+                            <span>+</span> 添加规则条目
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 地理环境面板 -->
+            <div class="panel" id="panel-geography">
+                <div class="panel-header">
+                    <h2>地理环境</h2>
+                    <p class="panel-desc">构建世界的地理版图与区域设定</p>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label>世界地图概览</label>
+                        <div class="map-upload-area" id="mapUploadArea">
+                            <div class="upload-placeholder">
+                                <span class="upload-icon">🗺️</span>
+                                <p>拖拽上传地图或点击选择图片</p>
+                                <span class="upload-hint">支持 JPG、PNG，建议尺寸 1920x1080</span>
+                            </div>
+                            <input type="file" id="mapUploadInput" accept="image/*" style="display:none;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>区域列表</label>
+                        <div id="regionList" class="dynamic-list">
+                            <div class="dynamic-item region-item-card">
+                                <div class="region-header">
+                                    <input type="text" class="form-input" placeholder="区域名称" value="核心区">
+                                    <select class="form-select region-type">
+                                        <option value="city">城市</option>
+                                        <option value="wilderness">荒野</option>
+                                        <option value="dungeon">地下城</option>
+                                        <option value="special">特殊区域</option>
+                                    </select>
+                                    <button class="btn-icon-sm" onclick="editor.removeDynamicItem(this)" title="删除">🗑️</button>
+                                </div>
+                                <textarea class="form-textarea" rows="2" placeholder="区域描述">公司总部所在地，高楼林立，戒备森严</textarea>
+                                <div class="region-tags">
+                                    <span class="tag">安全区</span>
+                                    <span class="tag">高科技</span>
+                                </div>
+                            </div>
+                            <div class="dynamic-item region-item-card">
+                                <div class="region-header">
+                                    <input type="text" class="form-input" placeholder="区域名称" value="贫民窟">
+                                    <select class="form-select region-type">
+                                        <option value="city">城市</option>
+                                        <option value="wilderness">荒野</option>
+                                        <option value="dungeon" selected>地下城</option>
+                                        <option value="special">特殊区域</option>
+                                    </select>
+                                    <button class="btn-icon-sm" onclick="editor.removeDynamicItem(this)" title="删除">🗑️</button>
+                                </div>
+                                <textarea class="form-textarea" rows="2" placeholder="区域描述">底层人民居住，混乱无序，黑市交易频繁</textarea>
+                                <div class="region-tags">
+                                    <span class="tag">危险</span>
+                                    <span class="tag">黑市</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="addRegion" style="margin-top:8px;">
+                            <span>+</span> 添加区域
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>气候特征</label>
+                        <input type="text" class="form-input" id="climateInput" placeholder="如：多雨，酸雨常见，终年雾霾..." value="多雨，酸雨常见">
+                    </div>
+                    <div class="form-group">
+                        <label>地标建筑</label>
+                        <div class="tag-input" id="landmarkTags">
+                            <span class="tag">天空之眼塔<span class="tag-close">×</span></span>
+                            <span class="tag">霓虹大道<span class="tag-close">×</span></span>
+                            <span class="tag">黑市入口<span class="tag-close">×</span></span>
+                            <input type="text" placeholder="添加地标...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 势力分布面板 -->
+            <div class="panel" id="panel-factions">
+                <div class="panel-header">
+                    <h2>势力分布</h2>
+                    <p class="panel-desc">设定世界中的组织、势力及其关系网络</p>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label>势力列表</label>
+                        <div id="factionList" class="dynamic-list">
+                            <div class="dynamic-item faction-item-card">
+                                <div class="faction-header">
+                                    <input type="text" class="form-input" placeholder="势力名称" value="天启集团">
+                                    <select class="form-select faction-alignment">
+                                        <option value="friendly">友好</option>
+                                        <option value="neutral">中立</option>
+                                        <option value="hostile" selected>敌对</option>
+                                    </select>
+                                    <button class="btn-icon-sm" onclick="editor.removeDynamicItem(this)" title="删除">🗑️</button>
+                                </div>
+                                <textarea class="form-textarea" rows="2" placeholder="势力描述">最大的公司，控制能源和通信，手段冷酷</textarea>
+                                <div class="faction-meta">
+                                    <input type="text" class="form-input" placeholder="势力领袖" value="董事长·赵">
+                                    <input type="text" class="form-input" placeholder="势力规模" value="10万+员工">
+                                </div>
+                            </div>
+                            <div class="dynamic-item faction-item-card">
+                                <div class="faction-header">
+                                    <input type="text" class="form-input" placeholder="势力名称" value="自由黑客联盟">
+                                    <select class="form-select faction-alignment">
+                                        <option value="friendly" selected>友好</option>
+                                        <option value="neutral">中立</option>
+                                        <option value="hostile">敌对</option>
+                                    </select>
+                                    <button class="btn-icon-sm" onclick="editor.removeDynamicItem(this)" title="删除">🗑️</button>
+                                </div>
+                                <textarea class="form-textarea" rows="2" placeholder="势力描述">地下反抗组织，致力于揭露公司黑幕</textarea>
+                                <div class="faction-meta">
+                                    <input type="text" class="form-input" placeholder="势力领袖" value="匿名">
+                                    <input type="text" class="form-input" placeholder="势力规模" value="数千名黑客">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="addFaction" style="margin-top:8px;">
+                            <span>+</span> 添加势力
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>势力关系图</label>
+                        <div class="relation-preview" id="relationPreview">
+                            <div class="relation-node hostile" style="left:20%;top:30%;">天启集团</div>
+                            <div class="relation-node friendly" style="left:70%;top:30%;">自由黑客联盟</div>
+                            <div class="relation-node neutral" style="left:45%;top:70%;">街头帮派</div>
+                            <svg class="relation-lines" viewBox="0 0 400 300">
+                                <line x1="80" y1="90" x2="280" y2="90" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,5"/>
+                                <line x1="80" y1="90" x2="180" y2="210" stroke="#f59e0b" stroke-width="2"/>
+                                <line x1="280" y1="90" x2="180" y2="210" stroke="#a1a1aa" stroke-width="2"/>
+                            </svg>
+                        </div>
+                        <p class="form-hint">红色虚线=敌对，橙色实线=中立，灰色实线=潜在联系</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 剧情系统面板 -->
+            <div class="panel" id="panel-story">
+                <div class="panel-header">
+                    <h2>剧情系统</h2>
+                    <p class="panel-desc">设计主线剧情、分支节点与结局走向</p>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label>剧情大纲</label>
+                        <textarea class="form-textarea" id="storyOutline" rows="5" placeholder="概述整个故事的主线剧情..."></textarea>
+                        <button class="btn btn-ai" id="aiExpandStory">
+                            <span class="icon">✨</span> AI扩写剧情
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>章节/节点列表</label>
+                        <div id="storyNodesList" class="story-nodes">
+                            <div class="story-node-card" data-node-id="node_1">
+                                <div class="node-number">1</div>
+                                <div class="node-info">
+                                    <input type="text" class="form-input" placeholder="节点名称" value="雨夜初遇">
+                                    <textarea class="form-textarea" rows="2" placeholder="节点描述">主角在雨夜中接到神秘委托</textarea>
+                                </div>
+                                <div class="node-actions">
+                                    <button class="btn-icon-sm" title="编辑选项" onclick="editor.editNodeOptions('node_1')">⚙️</button>
+                                    <button class="btn-icon-sm" title="生成视频" onclick="videoOverlay.open({name:'雨夜初遇',description:'主角在雨夜中接到神秘委托'})">🎬</button>
+                                    <button class="btn-icon-sm" title="删除" onclick="editor.removeStoryNode(this)">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="story-node-card" data-node-id="node_2">
+                                <div class="node-number">2</div>
+                                <div class="node-info">
+                                    <input type="text" class="form-input" placeholder="节点名称" value="潜入行动">
+                                    <textarea class="form-textarea" rows="2" placeholder="节点描述">需要潜入天启集团获取证据</textarea>
+                                </div>
+                                <div class="node-actions">
+                                    <button class="btn-icon-sm" title="编辑选项" onclick="editor.editNodeOptions('node_2')">⚙️</button>
+                                    <button class="btn-icon-sm" title="生成视频" onclick="videoOverlay.open({name:'潜入行动',description:'需要潜入天启集团获取证据'})">🎬</button>
+                                    <button class="btn-icon-sm" title="删除" onclick="editor.removeStoryNode(this)">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="addStoryNode" style="margin-top:8px;">
+                            <span>+</span> 添加剧情节点
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <label>结局分支</label>
+                        <div id="endingsList" class="dynamic-list">
+                            <div class="dynamic-item ending-card">
+                                <input type="text" class="form-input" placeholder="结局名称" value="真相大白">
+                                <select class="form-select ending-type">
+                                    <option value="good" selected>好结局</option>
+                                    <option value="bad">坏结局</option>
+                                    <option value="neutral">普通结局</option>
+                                    <option value="secret">隐藏结局</option>
+                                </select>
+                                <textarea class="form-textarea" rows="2" placeholder="结局描述">主角成功揭露真相，但代价惨重</textarea>
+                                <button class="btn-icon-sm" onclick="editor.removeDynamicItem(this)" title="删除">🗑️</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-secondary" id="addEnding" style="margin-top:8px;">
+                            <span>+</span> 添加结局
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 角色预设面板 -->
+            <div class="panel" id="panel-characters">
+                <div class="panel-header">
+                    <h2>角色预设</h2>
+                    <p class="panel-desc">创建和管理世界中的角色卡</p>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label>角色列表</label>
+                        <div class="character-grid" id="characterGrid">
+                            <div class="character-card" data-char-id="char_001">
+                                <div class="char-avatar" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">夜</div>
+                                <div class="char-info">
+                                    <div class="char-name">夜行者</div>
+                                    <div class="char-role">主角 · 黑客</div>
+                                    <div class="char-tags">
+                                        <span class="tag-sm">神秘</span>
+                                        <span class="tag-sm">正义</span>
+                                    </div>
+                                </div>
+                                <div class="char-actions">
+                                    <button class="btn-icon-sm" title="编辑" onclick="assetManager.editItem('char_001')">✏️</button>
+                                    <button class="btn-icon-sm" title="AI生成形象" onclick="assetManager.aiGenerateImage('char_001')">🎨</button>
+                                </div>
+                            </div>
+                            <div class="character-card" data-char-id="char_002">
+                                <div class="char-avatar" style="background: linear-gradient(135deg, #f59e0b, #ef4444);">红</div>
+                                <div class="char-info">
+                                    <div class="char-name">红狐</div>
+                                    <div class="char-role">配角 · 情报商</div>
+                                    <div class="char-tags">
+                                        <span class="tag-sm">圆滑</span>
+                                        <span class="tag-sm">机智</span>
+                                    </div>
+                                </div>
+                                <div class="char-actions">
+                                    <button class="btn-icon-sm" title="编辑" onclick="assetManager.editItem('char_002')">✏️</button>
+                                    <button class="btn-icon-sm" title="AI生成形象" onclick="assetManager.aiGenerateImage('char_002')">🎨</button>
+                                </div>
+                            </div>
+                            <div class="character-card add-card" onclick="assetManager.openEditor()">
+                                <div class="add-char-icon">+</div>
+                                <span>新建角色</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>快速创建角色</label>
+                        <div class="quick-create-form">
+                            <div class="form-row">
+                                <input type="text" class="form-input" id="quickCharName" placeholder="角色名称">
+                                <select class="form-select" id="quickCharRole">
+                                    <option value="protagonist">主角</option>
+                                    <option value="supporting">配角</option>
+                                    <option value="antagonist">反派</option>
+                                    <option value="npc">NPC</option>
+                                </select>
+                            </div>
+                            <textarea class="form-textarea" id="quickCharDesc" rows="2" placeholder="一句话描述角色..."></textarea>
+                            <button class="btn btn-primary" id="quickCreateChar">
+                                <span>+</span> 快速创建
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 物品系统面板 -->
+            <div class="panel" id="panel-items">
+                <div class="panel-header">
+                    <h2>物品系统</h2>
+                    <p class="panel-desc">设计世界中的道具、装备与收集品</p>
+                </div>
+                <div class="panel-content">
+                    <div class="form-group">
+                        <label>物品分类</label>
+                        <div class="item-categories">
+                            <button class="category-btn active" data-category="weapon">⚔️ 武器</button>
+                            <button class="category-btn" data-category="armor">🛡️ 防具</button>
+                            <button class="category-btn" data-category="consumable">🧪 消耗品</button>
+                            <button class="category-btn" data-category="key">🔑 关键道具</button>
+                            <button class="category-btn" data-category="collectible">💎 收集品</button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>物品列表</label>
+                        <div id="itemList" class="item-grid">
+                            <div class="item-card" data-item-id="item_1">
+                                <div class="item-icon">⚔️</div>
+                                <div class="item-info">
+                                    <div class="item-name">电磁脉冲刀</div>
+                                    <div class="item-rarity rare">稀有</div>
+                                    <div class="item-desc">可释放EMP冲击波的近战武器</div>
+                                </div>
+                                <div class="item-stats">
+                                    <span>攻击+25</span>
+                                    <span>EMP+15</span>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="btn-icon-sm" title="编辑" onclick="editor.editItem('item_1')">✏️</button>
+                                    <button class="btn-icon-sm" title="删除" onclick="editor.removeItem(this)">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="item-card" data-item-id="item_2">
+                                <div class="item-icon">🛡️</div>
+                                <div class="item-info">
+                                    <div class="item-name">光学迷彩斗篷</div>
+                                    <div class="item-rarity epic">史诗</div>
+                                    <div class="item-desc">激活后可短暂隐身</div>
+                                </div>
+                                <div class="item-stats">
+                                    <span>防御+10</span>
+                                    <span>隐身3s</span>
+                                </div>
+                                <div class="item-actions">
+                                    <button class="btn-icon-sm" title="编辑" onclick="editor.editItem('item_2')">✏️</button>
+                                    <button class="btn-icon-sm" title="删除" onclick="editor.removeItem(this)">🗑️</button>
+                                </div>
+                            </div>
+                            <div class="item-card add-card" id="addItemCard">
+                                <div class="add-item-icon">+</div>
+                                <span>新建物品</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>掉落规则</label>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>普通敌人掉落率</label>
+                                <div class="range-slider">
+                                    <input type="range" min="0" max="100" value="30" id="commonDropRate">
+                                    <span class="range-value">30%</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>稀有物品基础概率</label>
+                                <div class="range-slider">
+                                    <input type="range" min="1" max="50" value="5" id="rareDropRate">
+                                    <span class="range-value">5%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 社交 - 好友动态面板 -->
+            <div class="panel" id="panel-social-friends">
+                <div class="panel-header">
+                    <h2>好友动态</h2>
+                    <p class="panel-desc">查看好友活动、管理社交关系</p>
+                </div>
+                <div class="panel-content" id="socialFriendsContent"></div>
+            </div>
+
+            <!-- 社交 - 公会联盟面板 -->
+            <div class="panel" id="panel-social-guilds">
+                <div class="panel-header">
+                    <h2>公会联盟</h2>
+                    <p class="panel-desc">管理公会、参与公会战争</p>
+                </div>
+                <div class="panel-content" id="socialGuildsContent"></div>
+            </div>
+
+            <!-- 社交 - 排行榜面板 -->
+            <div class="panel" id="panel-social-leaderboard">
+                <div class="panel-header">
+                    <h2>排行榜</h2>
+                    <p class="panel-desc">等级、财富、公会、创作综合排行</p>
+                </div>
+                <div class="panel-content" id="socialLeaderboardContent"></div>
+            </div>
+
+            <!-- 市场 - 市场清单面板 -->
+            <div class="panel" id="panel-market-listings">
+                <div class="panel-header">
+                    <h2>市场清单</h2>
+                    <p class="panel-desc">浏览和购买角色卡、世界书、玩法集、装备</p>
+                </div>
+                <div class="panel-content" id="marketListingsContent"></div>
+            </div>
+
+            <!-- 市场 - 拍卖行面板 -->
+            <div class="panel" id="panel-market-auctions">
+                <div class="panel-header">
+                    <h2>拍卖行</h2>
+                    <p class="panel-desc">竞拍稀有角色卡和传说装备</p>
+                </div>
+                <div class="panel-content" id="marketAuctionsContent"></div>
+            </div>
+
+            <!-- 市场 - 创作者中心面板 -->
+            <div class="panel" id="panel-market-creator">
+                <div class="panel-header">
+                    <h2>创作者中心</h2>
+                    <p class="panel-desc">管理你的创作资产、收益分析和上架管理</p>
+                </div>
+                <div class="panel-content" id="marketCreatorContent"></div>
+            </div>
+
+            <!-- 成长 - 技能树面板 -->
+            <div class="panel" id="panel-growth-skills">
+                <div class="panel-header">
+                    <h2>技能树</h2>
+                    <p class="panel-desc">分配技能点、解锁强力技能</p>
+                </div>
+                <div class="panel-content" id="growthSkillsContent"></div>
+            </div>
+
+            <!-- 成长 - 装备管理面板 -->
+            <div class="panel" id="panel-growth-equipment">
+                <div class="panel-header">
+                    <h2>装备管理</h2>
+                    <p class="panel-desc">查看和更换角色装备</p>
+                </div>
+                <div class="panel-content" id="growthEquipmentContent"></div>
+            </div>
+
             <!-- 视觉风格面板 -->
             <div class="panel" id="panel-visual-style">
                 <div class="panel-header">
@@ -497,38 +1010,38 @@
                             <div class="color-option" style="background: #9d00ff;" data-color="electric_purple"></div>
                             <div class="color-option" style="background: #ff4400;" data-color="neon_orange"></div>
                             <div class="color-option" style="background: #00ff88;" data-color="neon_green"></div>
-                            <input type="color" class="color-custom" value="#00f0ff">
+                            <input type="color" class="color-custom" id="customColorPicker" value="#00f0ff">
                         </div>
                     </div>
                     <div class="form-group">
                         <label>视觉元素</label>
-                        <div class="visual-elements">
-                            <label class="checkbox-card active">
+                        <div class="visual-elements" id="visualElements">
+                            <label class="checkbox-card active" data-element="skyscrapers">
                                 <input type="checkbox" checked>
                                 <span class="element-icon">🏙️</span>
                                 <span class="element-name">摩天大楼</span>
                             </label>
-                            <label class="checkbox-card active">
+                            <label class="checkbox-card active" data-element="vehicles">
                                 <input type="checkbox" checked>
                                 <span class="element-icon">🚁</span>
                                 <span class="element-name">飞行载具</span>
                             </label>
-                            <label class="checkbox-card active">
+                            <label class="checkbox-card active" data-element="holograms">
                                 <input type="checkbox" checked>
                                 <span class="element-icon">📺</span>
                                 <span class="element-name">全息广告</span>
                             </label>
-                            <label class="checkbox-card">
+                            <label class="checkbox-card" data-element="robots">
                                 <input type="checkbox">
                                 <span class="element-icon">🤖</span>
                                 <span class="element-name">机器人</span>
                             </label>
-                            <label class="checkbox-card">
+                            <label class="checkbox-card" data-element="rain">
                                 <input type="checkbox">
                                 <span class="element-icon">🌧️</span>
                                 <span class="element-name">雨天</span>
                             </label>
-                            <label class="checkbox-card">
+                            <label class="checkbox-card" data-element="lightning">
                                 <input type="checkbox">
                                 <span class="element-icon">⚡</span>
                                 <span class="element-name">闪电</span>
@@ -537,7 +1050,7 @@
                     </div>
                     <div class="form-group">
                         <label>氛围参考图</label>
-                        <div class="reference-images">
+                        <div class="reference-images" id="referenceImages">
                             <div class="ref-image active">
                                 <img src="https://images.unsplash.com/photo-1515630278258-407f66498911?w=300&h=200&fit=crop" alt="赛博朋克">
                                 <div class="ref-overlay">✓</div>
@@ -548,7 +1061,7 @@
                             <div class="ref-image">
                                 <img src="https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=300&h=200&fit=crop" alt="城市">
                             </div>
-                            <div class="ref-image add-new">
+                            <div class="ref-image add-new" id="addRefImage">
                                 <span class="add-icon">+</span>
                                 <span>添加参考图</span>
                             </div>
@@ -886,6 +1399,18 @@
                             <span>🎮</span> 玩法集
                         </li>
                     </ul>
+                    <div class="asset-manager-tools" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color);">
+                        <h4 style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 12px;">工具</h4>
+                        <button class="btn btn-secondary btn-sm" style="width: 100%; margin-bottom: 8px; justify-content: center;" onclick="assetManager.importData()">
+                            <span>📥</span> 导入
+                        </button>
+                        <button class="btn btn-secondary btn-sm" style="width: 100%; margin-bottom: 8px; justify-content: center;" onclick="assetManager.exportData()">
+                            <span>📤</span> 导出
+                        </button>
+                        <button class="btn btn-secondary btn-sm" style="width: 100%; justify-content: center;" onclick="assetManager.batchDelete()">
+                            <span>🗑️</span> 清空全部
+                        </button>
+                    </div>
                 </div>
                 <div class="asset-manager-main" id="assetListContainer"></div>
                 <div class="asset-manager-detail" id="assetDetailContainer"></div>
@@ -916,6 +1441,13 @@
 
     <script src="data-store.js"></script>
     <script src="asset-manager.js"></script>
+    <script src="systems/world-book.js"></script>
+    <script src="systems/character-card.js"></script>
+    <script src="systems/game-options.js"></script>
+    <script src="systems/trading-market.js"></script>
+    <script src="systems/character-growth.js"></script>
+    <script src="systems/social.js"></script>
+    <script src="systems/ai-pipeline.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
