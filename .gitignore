@@ -1,0 +1,7 @@
+mingit/
+mingit.zip
+*.log
+.DS_Store
+*.swp
+*.swo
+*~
