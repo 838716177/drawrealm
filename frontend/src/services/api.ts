@@ -128,6 +128,19 @@ export const aiAPI = {
       prompt: prompt || '',
       duration: duration || 5,
     }).then((r) => r.data),
+
+  generateCharacter: (data: { overview: string; image?: string | null }) =>
+    api.post<{
+      name: string;
+      title: string;
+      identity: string;
+      gender: string;
+      age: string;
+      appearance: string;
+      background: string;
+      personality: string;
+      beliefs: string;
+    }>('/ai/generate-character', data).then((r) => r.data),
 };
 
 export default api;

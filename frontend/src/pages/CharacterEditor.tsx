@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { characterAPI } from '../services/api';
+import { characterAPI, aiAPI } from '../services/api';
+import { AICharacterGenerator } from '../components/AICharacterGenerator';
 import type { CharacterCard } from '../types';
 
 const PANELS = [
@@ -10,21 +11,13 @@ const PANELS = [
   { key: 'experience', label: '经历', icon: '📜' },
   { key: 'personality', label: '性格', icon: '🧠' },
   { key: 'philosophy', label: '理念', icon: '💭' },
-  { key: 'attributes', label: '属性', icon: '📊' },
-  { key: 'skills', label: '技能', icon: '⚡' },
-  { key: 'equipment', label: '装备', icon: '🗡️' },
-  { key: 'relationships', label: '关系', icon: '🔗' },
-  { key: 'ipmeta', label: 'IP元数据', icon: '©️' },
   { key: 'preview', label: '预览', icon: '👀' },
 ];
 
 const FIELD_LABELS: Record<string, string> = {
   name: '角色名', title: '称号', identity: '身份描述', gender: '性别', age: '年龄',
   appearance: '外貌特征', background: '背景经历', personality: '性格特征', beliefs: '核心理念',
-  level: '等级', health: '生命值', max_health: '生命上限', mana: '法力值', max_mana: '法力上限',
-  strength: '力量', agility: '敏捷', intelligence: '智力', charisma: '魅力',
   ip_type: 'IP类型', ip_source: '来源作品', ip_author: '原作者', ip_url: '参考链接',
-  skills_text: '技能配置（JSON）', equipment_text: '装备配置（JSON）', relationships_text: '角色关系（文本）',
 };
 
 export default function CharacterEditor() {
@@ -36,10 +29,15 @@ export default function CharacterEditor() {
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
   const [isNew, setIsNew] = useState(true);
-  const [skillsStr, setSkillsStr] = useState('[]');
-  const [equipmentStr, setEquipmentStr] = useState('[]');
   const [relationshipsStr, setRelationshipsStr] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // AI生成状态
+  const [aiOverview, setAiOverview] = useState('');
+  const [useImage, setUseImage] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (id && id !== 'new') {
@@ -53,8 +51,6 @@ export default function CharacterEditor() {
       setFormData({
         name: '', title: '', identity: '', gender: '未知', age: '',
         appearance: '', background: '', personality: '', beliefs: '',
-        level: 1, health: 100, max_health: 100, mana: 50, max_mana: 50,
-        strength: 10, agility: 10, intelligence: 10, charisma: 10,
         ip_type: 'original', ip_source: '', ip_author: '', ip_url: '',
       });
     }
@@ -84,7 +80,7 @@ export default function CharacterEditor() {
   };
 
   const handleExport = () => {
-    const data = { ...formData, skills: skillsStr, equipment: equipmentStr, relationships: relationshipsStr };
+    const data = { ...formData, relationships: relationshipsStr };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -100,8 +96,6 @@ export default function CharacterEditor() {
       try {
         const data = JSON.parse(ev.target?.result as string);
         setFormData(prev => ({ ...prev, ...data }));
-        if (data.skills) setSkillsStr(typeof data.skills === 'string' ? data.skills : JSON.stringify(data.skills));
-        if (data.equipment) setEquipmentStr(typeof data.equipment === 'string' ? data.equipment : JSON.stringify(data.equipment));
         if (data.relationships) setRelationshipsStr(data.relationships);
       } catch { alert('导入失败：无效的JSON文件'); }
     };
@@ -110,6 +104,62 @@ export default function CharacterEditor() {
 
   const updateField = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // AI生成功能
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setUploadedImage(ev.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setUploadedImage(null);
+    if (imageInputRef.current) imageInputRef.current.value = '';
+  };
+
+  const startAIGeneration = async () => {
+    if (!aiOverview.trim() && !uploadedImage) {
+      alert('请输入角色概述或上传角色图片');
+      return;
+    }
+    
+    setAiGenerating(true);
+    try {
+      // 调用AI API生成角色
+      const result = await aiAPI.generateCharacter({
+        overview: aiOverview,
+        image: uploadedImage,
+      });
+      
+      // 填充生成的数据
+      setFormData(prev => ({
+        ...prev,
+        name: result.name || prev.name,
+        title: result.title || prev.title,
+        identity: result.identity || prev.identity,
+        gender: result.gender || prev.gender,
+        age: result.age || prev.age,
+        appearance: result.appearance || prev.appearance,
+        background: result.background || prev.background,
+        personality: result.personality || prev.personality,
+        beliefs: result.beliefs || prev.beliefs,
+      }));
+      
+      // 跳转到身份面板
+      setActivePanel(1);
+      setSavedMsg('✨ AI生成完成');
+      setTimeout(() => setSavedMsg(''), 2000);
+    } catch (err) {
+      console.error('AI生成失败:', err);
+      alert('AI生成失败，请重试或手动创建');
+    } finally {
+      setAiGenerating(false);
+    }
   };
 
   const renderPanel = () => {
@@ -121,19 +171,135 @@ export default function CharacterEditor() {
             <h3 style={{ color: 'var(--accent-purple-light)', marginBottom: 8 }}>角色卡创建引导</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.8 }}>
               角色卡是你在绘境世界中的身份标识。一个完整的角色卡包含姓名、身份、性格、
-              经历、属性等多个维度。按照左侧的面板顺序，逐项填写你的角色设定。
+              经历等多个维度。你可以使用AI智能生成，或手动逐项填写。
             </p>
-            <div style={{ background: 'rgba(139,92,246,0.1)', borderRadius: 8, padding: 16, border: '1px solid rgba(139,92,246,0.2)' }}>
-              <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                <strong style={{ color: 'var(--accent-gold)' }}>💡 提示：</strong>
-                角色卡支持导入/导出JSON格式，方便在不同世界之间复用角色。
+
+            {/* AI生成区域 */}
+            <div style={{
+              background: 'rgba(139,92,246,0.08)',
+              borderRadius: 12,
+              padding: 20,
+              border: '1px solid rgba(139,92,246,0.2)',
+              marginBottom: 16
+            }}>
+              <h4 style={{ color: 'var(--accent-gold)', marginBottom: 12, fontSize: 16 }}>🤖 AI 智能生成</h4>
+              <AICharacterGenerator onGenerated={(data) => {
+                setFormData(prev => ({
+                  ...prev,
+                  name: data.name || prev.name,
+                  title: data.title || prev.title,
+                  identity: data.identity || prev.identity,
+                  gender: data.gender === 'female' ? '女' : data.gender === 'male' ? '男' : prev.gender,
+                  age: data.age || prev.age,
+                  appearance: data.appearance || prev.appearance,
+                  background: data.background || prev.background,
+                  personality: data.personality || prev.personality,
+                  beliefs: data.beliefs || prev.beliefs,
+                }));
+                setSavedMsg('✨ AI生成完成，已填充到表单');
+                setTimeout(() => setSavedMsg(''), 2000);
+              }} />
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '16px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+                <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>高级选项</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+              </div>
+
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                输入角色概述，AI将为你生成完整的角色设定
               </p>
+              <textarea
+                className="input"
+                style={{ minHeight: 100, marginBottom: 12 }}
+                value={aiOverview}
+                onChange={(e) => setAiOverview(e.target.value)}
+                placeholder="描述你想要的角色...\n例如：一个来自东方古国的剑客，性格冷峻，背负着灭门之仇，手持一柄传世名剑..."
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <input
+                  type="checkbox"
+                  id="useImage"
+                  checked={useImage}
+                  onChange={(e) => setUseImage(e.target.checked)}
+                  style={{ accentColor: 'var(--accent-purple)' }}
+                />
+                <label htmlFor="useImage" style={{ color: 'var(--text-secondary)', fontSize: 13, cursor: 'pointer' }}>
+                  📷 以图生成
+                </label>
+              </div>
+
+              {useImage && (
+                <div style={{ marginBottom: 12 }}>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleImageUpload}
+                  />
+                  {!uploadedImage ? (
+                    <div
+                      onClick={() => imageInputRef.current?.click()}
+                      style={{
+                        border: '2px dashed rgba(139,92,246,0.3)',
+                        borderRadius: 8,
+                        padding: 24,
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s',
+                      }}
+                    >
+                      <span style={{ fontSize: 24, display: 'block', marginBottom: 8 }}>📷</span>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: 14 }}>点击上传角色图片</span>
+                      <span style={{ color: 'var(--text-dim)', fontSize: 12, display: 'block', marginTop: 4 }}>
+                        AI将识别图片中的人物形象并生成对应内容
+                      </span>
+                    </div>
+                  ) : (
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <img
+                        src={uploadedImage}
+                        alt="预览"
+                        style={{ maxWidth: 200, maxHeight: 200, borderRadius: 8, border: '1px solid var(--border-color)' }}
+                      />
+                      <button
+                        onClick={removeImage}
+                        style={{
+                          position: 'absolute', top: -8, right: -8,
+                          width: 24, height: 24, borderRadius: '50%',
+                          background: 'rgba(255,0,0,0.7)', color: '#fff',
+                          border: 'none', cursor: 'pointer', fontSize: 12,
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button
+                className="btn btn-primary"
+                onClick={startAIGeneration}
+                disabled={aiGenerating}
+                style={{ width: '100%' }}
+              >
+                {aiGenerating ? '⏳ 生成中...' : '✨ AI智能生成角色'}
+              </button>
             </div>
-            <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImport} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '16px 0' }}>
+              <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+              <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>或</span>
+              <div style={{ flex: 1, height: 1, background: 'var(--border-color)' }} />
+            </div>
+
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn btn-sm btn-gold" onClick={handleExport}>📥 导出角色</button>
               <button className="btn btn-sm" onClick={() => fileInputRef.current?.click()}>📤 导入角色</button>
             </div>
+            <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={handleImport} />
           </div>
         );
       case 'identity':
@@ -194,81 +360,6 @@ export default function CharacterEditor() {
                 placeholder="描述角色的核心理念：人生信条、价值观、目标..." /></div>
           </div>
         );
-      case 'attributes':
-        return (
-          <div className="flex-col gap-16" style={{ animation: 'fadeIn 0.3s' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              {['health', 'max_health', 'mana', 'max_mana', 'level', 'strength', 'agility', 'intelligence', 'charisma'].map(f => (
-                <div key={f}>
-                  <label>{FIELD_LABELS[f]}</label>
-                  <input className="input" type="number" value={formData[f] || 0}
-                    onChange={(e) => updateField(f, parseInt(e.target.value) || 0)} />
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      case 'skills':
-        return (
-          <div className="flex-col gap-16" style={{ animation: 'fadeIn 0.3s' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-              使用JSON格式定义技能列表，每个技能包含 name、description、level：
-            </p>
-            <textarea className="input" style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 12 }}
-              value={skillsStr} onChange={(e) => setSkillsStr(e.target.value)}
-              placeholder={`[{"name":"技能名","description":"描述","level":1}]`} />
-          </div>
-        );
-      case 'equipment':
-        return (
-          <div className="flex-col gap-16" style={{ animation: 'fadeIn 0.3s' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-              使用JSON格式定义装备列表，每个装备包含 name、slot、quality：
-            </p>
-            <textarea className="input" style={{ minHeight: 150, fontFamily: 'monospace', fontSize: 12 }}
-              value={equipmentStr} onChange={(e) => setEquipmentStr(e.target.value)}
-              placeholder={`[{"name":"装备名","slot":"weapon","quality":"rare"}]`} />
-          </div>
-        );
-      case 'relationships':
-        return (
-          <div className="flex-col gap-16" style={{ animation: 'fadeIn 0.3s' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-              描述角色与其他角色的关系网络：
-            </p>
-            <textarea className="input" style={{ minHeight: 150 }}
-              value={relationshipsStr} onChange={(e) => setRelationshipsStr(e.target.value)}
-              placeholder="列出角色的重要关系：家人、朋友、敌人、导师..." />
-          </div>
-        );
-      case 'ipmeta':
-        return (
-          <div className="flex-col gap-16" style={{ animation: 'fadeIn 0.3s' }}>
-            {['ip_type', 'ip_source', 'ip_author', 'ip_url'].map(f => (
-              <div key={f}>
-                <label>{FIELD_LABELS[f]}</label>
-                {f === 'ip_type' ? (
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    {[
-                      ['original', '原创'],
-                      ['jpm', '金瓶梅'],
-                      ['movie', '影视'],
-                      ['anime', '动漫'],
-                      ['game', '游戏'],
-                    ].map(([id, label]) => (
-                      <button key={id} className={`btn btn-sm ${formData.ip_type === id ? 'btn-primary' : ''}`}
-                        onClick={() => updateField('ip_type', id)}>{label}</button>
-                    ))}
-                  </div>
-                ) : (
-                  <input className="input" value={formData[f] || ''}
-                    onChange={(e) => updateField(f, e.target.value)}
-                    placeholder={`输入${FIELD_LABELS[f]}`} />
-                )}
-              </div>
-            ))}
-          </div>
-        );
       case 'preview':
         return (
           <div className="flex-col gap-12" style={{ animation: 'fadeIn 0.3s' }}>
@@ -281,15 +372,6 @@ export default function CharacterEditor() {
               <span style={{ color: 'var(--text-secondary)' }}>身份：{formData.identity || '-'}</span>
               <span style={{ color: 'var(--text-secondary)' }}>性别：{formData.gender}</span>
               <span style={{ color: 'var(--text-secondary)' }}>年龄：{formData.age || '-'}</span>
-              <span style={{ color: 'var(--text-secondary)' }}>等级：Lv{formData.level}</span>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, fontSize: 12, color: 'var(--text-secondary)' }}>
-              <span>❤️ {formData.health}/{formData.max_health}</span>
-              <span>💎 {formData.mana}/{formData.max_mana}</span>
-              <span>⚔️ 力量 {formData.strength}</span>
-              <span>🏃 敏捷 {formData.agility}</span>
-              <span>🧠 智力 {formData.intelligence}</span>
-              <span>💬 魅力 {formData.charisma}</span>
             </div>
             {formData.appearance && (
               <div><strong style={{ fontSize: 12, color: 'var(--accent-purple-light)' }}>外观：</strong>

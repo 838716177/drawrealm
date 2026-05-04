@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { worldbookAPI, aiAPI } from '../services/api';
+import { worldbookAPI } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { STORE_CATEGORIES } from '../constants/worldData';
+import { WorldBookDetail } from '../components/WorldBookDetail';
 import type { WorldBook } from '../types';
 
 const PRESET_WORLDBOOKS = [
@@ -32,6 +33,7 @@ export default function StorePage() {
   const [priceFilter, setPriceFilter] = useState<PriceFilter>('all');
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedBook, setSelectedBook] = useState<WorldBook | null>(null);
 
   useEffect(() => {
     if (myOnly && !isLoggedIn) {
@@ -65,6 +67,45 @@ export default function StorePage() {
     if (search && !book.title.includes(search) && !(book.description || '').includes(search)) return false;
     return true;
   });
+
+  const handleBookClick = (book: WorldBook | typeof PRESET_WORLDBOOKS[0]) => {
+    if ('id' in book && book.id) {
+      if (myOnly) {
+        navigate(`/editor/${book.id}`);
+        return;
+      }
+    }
+    // Convert preset book to WorldBook-like object for detail view
+    const detailBook: WorldBook = {
+      id: ('id' in book ? book.id : 0) as number,
+      title: book.title,
+      subtitle: book.subtitle || '',
+      description: book.description,
+      cover_url: '',
+      category: book.category,
+      tags: typeof book.tags === 'string' ? book.tags : '',
+      price: book.price || 0,
+      is_published: true,
+      is_featured: 'featured' in book ? !!book.featured : false,
+      play_count: 'playCount' in book ? book.playCount : 0,
+      like_count: 'likeCount' in book ? book.likeCount : 0,
+      version: 1,
+      worldview: book.description,
+      timeline: '',
+      world_rules: '',
+      geography: '',
+      culture: '',
+      history: '',
+      races: '',
+      factions: '',
+      gods: '',
+      artifacts: '',
+      creator_id: 0,
+      created_at: '',
+      updated_at: '',
+    };
+    setSelectedBook(detailBook);
+  };
 
   if (loading) {
     return (
@@ -121,12 +162,7 @@ export default function StorePage() {
           <div key={i} className="card" style={{
             cursor: 'pointer', padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column',
             animation: `fadeIn 0.5s ${i * 0.05}s both`,
-          }} onClick={() => {
-            if ('id' in book && book.id) {
-              if (myOnly) navigate(`/editor/${book.id}`);
-              else navigate(`/play/${book.id}`);
-            }
-          }}>
+          }} onClick={() => handleBookClick(book)}>
             <div style={{
               height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center',
               background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(34,211,238,0.1))',
@@ -174,6 +210,22 @@ export default function StorePage() {
               <button className="btn btn-primary" onClick={() => navigate('/create')}>🏰 创建你的第一个世界</button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {selectedBook && (
+        <div className="modal-overlay" onClick={() => setSelectedBook(null)}>
+          <div className="modal-content" style={{ maxWidth: 700, maxHeight: '85vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+            <WorldBookDetail
+              book={selectedBook}
+              onClose={() => setSelectedBook(null)}
+              onEnterWorld={(id) => {
+                setSelectedBook(null);
+                navigate(`/play/${id}`);
+              }}
+            />
+          </div>
         </div>
       )}
     </div>

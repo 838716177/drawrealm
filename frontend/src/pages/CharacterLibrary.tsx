@@ -64,20 +64,52 @@ export default function CharacterLibrary() {
       </div>
 
       <div className="flex-between mb-16" style={{ flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input className="input" style={{ width: 220 }} placeholder="🔍 搜索角色名/身份/背景..."
-            value={search} onChange={(e) => setSearch(e.target.value)} />
-          <div className="tab-bar" style={{ margin: 0 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ position: 'relative' }}>
+            <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 14 }}>🔍</span>
+            <input 
+              className="input" 
+              style={{ width: 240, paddingLeft: 32 }} 
+              placeholder="搜索角色名/身份/背景..."
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+            />
+          </div>
+          <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: 4 }}>
             {[{ id: 'all', name: '全部' }, { id: '男', name: '♂ 男' }, { id: '女', name: '♀ 女' }].map(g => (
-              <button key={g.id} className={`tab-item ${genderFilter === g.id ? 'active' : ''}`}
-                onClick={() => setGenderFilter(g.id)}>{g.name}</button>
+              <button 
+                key={g.id} 
+                className={`btn btn-sm ${genderFilter === g.id ? 'btn-primary' : ''}`}
+                style={{ 
+                  borderRadius: 8,
+                  padding: '6px 14px',
+                  fontSize: 13,
+                  border: genderFilter === g.id ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                  background: genderFilter === g.id ? undefined : 'transparent',
+                }}
+                onClick={() => setGenderFilter(g.id)}
+              >
+                {g.name}
+              </button>
             ))}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 6, background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: 4 }}>
           {([['newest', '最新'], ['popular', '热门'], ['name', '名称']] as [SortMode, string][]).map(([id, label]) => (
-            <button key={id} className={`btn btn-sm ${sortBy === id ? 'btn-primary' : ''}`}
-              onClick={() => setSortBy(id)}>{label}</button>
+            <button 
+              key={id} 
+              className={`btn btn-sm ${sortBy === id ? 'btn-primary' : ''}`}
+              style={{ 
+                borderRadius: 8,
+                padding: '6px 14px',
+                fontSize: 13,
+                border: sortBy === id ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                background: sortBy === id ? undefined : 'transparent',
+              }}
+              onClick={() => setSortBy(id)}
+            >
+              {label}
+            </button>
           ))}
         </div>
       </div>

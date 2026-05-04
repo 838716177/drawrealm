@@ -43,28 +43,53 @@ export default function WorldCreator() {
 
   const startAI = async (customInput?: string) => {
     const prompt = customInput || input;
+    if (!prompt.trim()) return;
     setStep(1);
     setGeneratedContent('');
     setIsGenerating(true);
 
     try {
       const response = await aiAPI.generateWorldviewStream(prompt, style);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
       const reader = response.body?.getReader();
       if (!reader) throw new Error('No reader');
       const decoder = new TextDecoder();
+      let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        const lines = text.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
         for (const line of lines) {
-          if (line.startsWith('data: ') && line.slice(6) !== '[DONE]') {
-            appendGeneratedContent(line.slice(6));
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            const payload = trimmed.slice(6);
+            if (payload !== '[DONE]') {
+              appendGeneratedContent(payload);
+            }
+          } else if (trimmed.length > 0 && !trimmed.startsWith(':')) {
+            // 兼容非SSE格式的纯文本流
+            appendGeneratedContent(trimmed);
           }
         }
       }
-    } catch {
-      appendGeneratedContent('\n\n> ⚠️ AI生成失败，请检查网络后重试');
+      if (buffer.trim().length > 0) {
+        appendGeneratedContent(buffer.trim());
+      }
+    } catch (err) {
+      console.error('AI流式生成失败:', err);
+      // 降级到非流式接口
+      try {
+        appendGeneratedContent('\n> 流式生成失败，尝试普通生成...\n');
+        const result = await aiAPI.generateWorldview(prompt, style);
+        setGeneratedContent(result.content || '');
+      } catch (err2) {
+        console.error('AI普通生成也失败:', err2);
+        appendGeneratedContent('\n\n> ⚠️ AI生成失败，请检查网络或稍后重试');
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -103,24 +128,49 @@ export default function WorldCreator() {
 
     try {
       const response = await aiAPI.generateOpeningStream(createdWorldBook.id);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
       const reader = response.body?.getReader();
       if (!reader) throw new Error('No reader');
       const decoder = new TextDecoder();
       let full = '';
+      let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        const lines = text.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
         for (const line of lines) {
-          if (line.startsWith('data: ') && line.slice(6) !== '[DONE]') {
-            full += line.slice(6);
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            const payload = trimmed.slice(6);
+            if (payload !== '[DONE]') {
+              full += payload;
+              setGeneratedContent(full);
+            }
+          } else if (trimmed.length > 0 && !trimmed.startsWith(':')) {
+            full += trimmed;
             setGeneratedContent(full);
           }
         }
       }
-    } catch {
-      setGeneratedContent('⚠️ 开场故事生成失败');
+      if (buffer.trim().length > 0) {
+        full += buffer.trim();
+        setGeneratedContent(full);
+      }
+    } catch (err) {
+      console.error('开场故事流式生成失败:', err);
+      // 降级到非流式接口
+      try {
+        setGeneratedContent('> 流式生成失败，尝试普通生成...\n');
+        const result = await aiAPI.generateOpening(createdWorldBook.id);
+        setGeneratedContent(result.content || '');
+      } catch (err2) {
+        console.error('开场故事普通生成也失败:', err2);
+        setGeneratedContent('⚠️ 开场故事生成失败，请检查网络或稍后重试');
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -231,7 +281,20 @@ export default function WorldCreator() {
           <h2 className="section-title">生成世界观</h2>
           <div ref={contentRef} className="card markdown-content"
             style={{ minHeight: 300, maxHeight: '60vh', overflow: 'auto', whiteSpace: 'pre-wrap' }}>
-            {generatedContent || (isGenerating && '⏳ AI正在构建你的世界...')}
+            {generatedContent ? (
+              generatedContent
+            ) : isGenerating ? (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+                <div>AI正在构建你的世界...</div>
+                <div style={{ fontSize: 12, marginTop: 8, color: 'var(--text-muted)' }}>这可能需要几秒钟到一分钟</div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-secondary)' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🌌</div>
+                <div>准备生成世界观...</div>
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {!isGenerating && generatedContent && (
@@ -242,7 +305,13 @@ export default function WorldCreator() {
                 </button>
               </>
             )}
-            <button className="btn" onClick={() => { setStep(0); setGeneratedContent(''); }}>← 返回修改</button>
+            {isGenerating && (
+              <button className="btn" disabled>
+                <span className="spinner" style={{ display: 'inline-block', width: 14, height: 14, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginRight: 8 }} />
+                生成中...
+              </button>
+            )}
+            <button className="btn" onClick={() => { setStep(0); setGeneratedContent(''); }} disabled={isGenerating}>← 返回修改</button>
           </div>
         </div>
       )}
