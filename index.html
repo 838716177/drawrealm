@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>妄想商铺 - 开启你的妄想世界之旅</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Microsoft YaHei', 'SimHei', 'STKaiti', serif;
+            overflow: hidden;
+            background: #050510;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .container {
+            position: relative; width: 100vw; height: 100vh;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            cursor: pointer; overflow: hidden;
+        }
+    </style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="metaverse.css">
+</head>
+<body>
+    <!-- 元宇宙星空背景 -->
+    <div class="metaverse-bg" id="metaverseBg"></div>
+
+    <!-- 浮动粒子 -->
+    <div class="mv-particles" id="mvParticles">
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+        <div class="mv-particle"></div>
+    </div>
+
+    <!-- 全息网格地面 -->
+    <div class="mv-grid-floor" id="mvGridFloor"></div>
+
+    <div class="container" id="mainContainer">
+        <div class="bg-layer bg-layer-1"></div>
+        <div class="bg-layer bg-layer-2"></div>
+
+        <div class="particles">
+            <div class="particle" style="animation-delay: 0s;"></div>
+            <div class="particle" style="animation-delay: 0.5s;"></div>
+            <div class="particle" style="animation-delay: 1s;"></div>
+            <div class="particle" style="animation-delay: 1.5s;"></div>
+            <div class="particle" style="animation-delay: 2s;"></div>
+            <div class="particle" style="animation-delay: 2.5s;"></div>
+            <div class="particle" style="animation-delay: 3s;"></div>
+            <div class="particle" style="animation-delay: 3.5s;"></div>
+            <div class="particle" style="animation-delay: 4s;"></div>
+            <div class="particle" style="animation-delay: 4.5s;"></div>
+            <div class="particle" style="animation-delay: 5s;"></div>
+            <div class="particle" style="animation-delay: 5.5s;"></div>
+        </div>
+
+        <div class="magic-rings">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+        </div>
+
+        <div class="title-section" id="titleSection">
+            <h1 class="main-title">
+                <span class="title-word title-word-1">妄想</span>
+                <span class="title-divider">◆</span>
+                <span class="title-word title-word-2">商铺</span>
+            </h1>
+
+            <p class="sub-title">点击开启你的妄想世界之旅</p>
+
+            <div class="title-decoration">
+                <div class="decor-line"></div>
+                <div class="decor-dot"></div>
+                <div class="decor-line"></div>
+            </div>
+
+            <div class="click-hint mv-float">
+                <span class="cursor">▼</span>
+                <span class="hint-text">点击进入</span>
+            </div>
+        </div>
+
+        <div class="border-frame">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+            <div class="border-line top"></div>
+            <div class="border-line bottom"></div>
+            <div class="border-line left"></div>
+            <div class="border-line right"></div>
+        </div>
+    </div>
+
+<script src="engine-core.js?v=2"></script>
+<script src="engine-audio.js?v=2"></script>
+<script src="engine-branch.js?v=2"></script>
+<script src="engine-ui.js?v=2"></script>
+<script src="engine-init.js?v=2"></script>
+<script src="engine-integration.js?v=2"></script>
+<script src="app.js?v=13"></script>
+<script src="app-fixes.js?v=2"></script>
+<script src="characters.js?v=13"></script>
+</body>
+</html>
